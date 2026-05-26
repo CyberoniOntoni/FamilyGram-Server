@@ -59,7 +59,7 @@ internal sealed class GetStarGiftsHandler(IMongoDatabase mongoDatabase) : RpcRes
                 AuctionSlug = doc.IsAuction && !string.IsNullOrEmpty(doc.AuctionSlug) ? doc.AuctionSlug : null,
                 GiftsPerRound = doc.IsAuction && doc.GiftsPerRound > 0 ? doc.GiftsPerRound : null,
                 AuctionStartDate = doc.IsAuction && doc.AuctionStartDate > 0 ? doc.AuctionStartDate : null,
-                UpgradeVariants = doc.UpgradeStars > 0 && totalVariantCount > 0 ? totalVariantCount : null,
+                UpgradeVariants = totalVariantCount > 0 ? totalVariantCount : null,
                 Sticker = new TDocument
                 {
                     Id = doc.DocumentId,
