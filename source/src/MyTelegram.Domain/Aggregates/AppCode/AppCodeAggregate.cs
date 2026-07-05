@@ -63,6 +63,26 @@ public class AppCodeAggregate : SnapshotAggregateRoot<AppCodeAggregate, AppCodeI
         ));
     }
 
+    public void ResendCode(RequestInfo requestInfo,
+        long userId,
+        string phoneNumber,
+        string code,
+        string phoneCodeHash,
+        long creationTime)
+    {
+        Specs.AggregateIsCreated.ThrowDomainErrorIfNotSatisfied(this);
+
+        var now = DateTime.UtcNow.ToTimestamp();
+        if (_state.Canceled || now > _state.Expire)
+        {
+            RpcErrors.RpcErrors400.PhoneCodeExpired.ThrowRpcError();
+        }
+
+        var expire = GetExpirationMinutes();
+
+        Emit(new AppCodeResentEvent(requestInfo, userId, phoneNumber, code, expire, phoneCodeHash, creationTime));
+    }
+
     public void CreateAppCode(RequestInfo requestInfo,
         long userId,
         string phoneNumber,

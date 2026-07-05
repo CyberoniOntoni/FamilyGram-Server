@@ -197,6 +197,32 @@ docker compose up -d --force-recreate file-server
 
 ## Сборка Docker-образов
 
+### CI (GitHub Actions)
+
+[`.github/workflows/docker-build.yml`](.github/workflows/docker-build.yml) собирает шесть .NET-сервисов, чьи исходники
+есть в этом форке — `messenger-command-server`, `messenger-query-server`, `gateway-server`, `auth-server`,
+`sms-sender`, `data-seeder` — а также Python-бота верификации (`testgram-bot`), и публикует их в GHCR при каждом
+push в `dev` и при тегах `v*.*.*` (в pull request'ах только сборка, без публикации). Образы публикуются как:
+
+```
+ghcr.io/is-a-developers/testgram/<service-name>:latest
+ghcr.io/is-a-developers/testgram/<service-name>:<version>   # из build/version.txt
+ghcr.io/is-a-developers/testgram/<service-name>:<git-sha>
+```
+
+`docker-compose.yml` уже ссылается на эти образы через `TestgramRegistry`/`TestgramVersion` в `.env` (см.
+`.env.example`), так что `docker compose pull && docker compose up -d` подхватит то, что собрал CI. `session-server`
+и `file-server` не входят в исходники этого форка, поэтому они по-прежнему тянутся из upstream-реестра MyTelegram
+через отдельные переменные `MyTelegramRegistry`/`MyTelegramVersion`.
+
+> Пакеты GHCR по умолчанию приватные даже в публичном репозитории. При первом запуске workflow сделайте каждый
+> пакет `ghcr.io/is-a-developers/testgram/<service-name>` публичным в настройках **Packages** репозитория/организации,
+> либо выполните `docker login ghcr.io` с токеном с правом `read:packages` перед `docker compose pull`.
+
+Собрать вручную можно из вкладки **Actions** (`workflow_dispatch`).
+
+### Локальная сборка
+
 ```bash
 # Linux amd64
 cd build/docker && ./build-all-amd64.sh
@@ -221,7 +247,19 @@ cd build/docker && ./build-all-arm64.sh
 
 ## Бот верификации
 
-В репозитории есть Telegram-бот (`bot/`), который слушает коды регистрации через RabbitMQ и отправляет их пользователям.
+В репозитории есть Telegram-бот (`bot/`), который доставляет коды входа/верификации в тот Telegram-аккаунт, к
+которому пользователь привязал номер телефона (`/start` → добавить номер). `sms-sender` вызывает его HTTP-эндпоинт
+`/send` при каждом `auth.sendCode`/`auth.resendCode`; опционально бот может также слушать
+`AppCodeCreatedIntegrationEvent` напрямую из RabbitMQ (`ENABLE_RABBITMQ_CONSUMER=true`).
+
+**Docker (рекомендуется, уже подключено в `docker-compose.yml`):**
+
+```bash
+# В .env: укажите BOT_TOKEN (и опционально BOT_TOKEN1, BOT_TOKEN2, ...)
+docker compose up -d bot
+```
+
+**Вручную (без Docker):**
 
 ```bash
 cd bot

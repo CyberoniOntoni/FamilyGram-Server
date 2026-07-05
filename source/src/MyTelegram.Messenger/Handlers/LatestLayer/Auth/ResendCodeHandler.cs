@@ -14,10 +14,44 @@ namespace MyTelegram.Messenger.Handlers.LatestLayer.Auth;
 /// <remarks>
 /// Access: [User ✔] [Bot ✖] [Anonymous ✔]
 /// </remarks>
-internal sealed class ResendCodeHandler : RpcResultObjectHandler<MyTelegram.Schema.Auth.RequestResendCode, MyTelegram.Schema.Auth.ISentCode>
+internal sealed class ResendCodeHandler(
+    ICommandBus commandBus,
+    IQueryProcessor queryProcessor,
+    IVerificationCodeGenerator verificationCodeGenerator,
+    IOptionsMonitor<MyTelegramMessengerServerOptions> options)
+    : RpcResultObjectHandler<MyTelegram.Schema.Auth.RequestResendCode, MyTelegram.Schema.Auth.ISentCode>
 {
-    protected override Task<MyTelegram.Schema.Auth.ISentCode> HandleCoreAsync(IRequestInput input, MyTelegram.Schema.Auth.RequestResendCode obj)
+    protected override async Task<MyTelegram.Schema.Auth.ISentCode> HandleCoreAsync(IRequestInput input, MyTelegram.Schema.Auth.RequestResendCode obj)
     {
-        throw new NotImplementedException();
+        var phoneNumber = obj.PhoneNumber.ToPhoneNumber();
+        if (!long.TryParse(phoneNumber, out _))
+            RpcErrors.RpcErrors400.PhoneNumberInvalid.ThrowRpcError();
+
+        if (string.IsNullOrWhiteSpace(obj.PhoneCodeHash))
+            RpcErrors.RpcErrors400.PhoneCodeHashEmpty.ThrowRpcError();
+
+        var appCode = await queryProcessor.ProcessAsync(new GetLatestAppCodeQuery(phoneNumber, obj.PhoneCodeHash));
+        if (appCode == null || appCode.Expire < DateTime.UtcNow.ToTimestamp())
+            RpcErrors.RpcErrors400.PhoneCodeExpired.ThrowRpcError();
+
+        var userReadModel = await queryProcessor.ProcessAsync(new GetUserByPhoneNumberQuery(phoneNumber));
+        var userId = userReadModel?.UserId ?? 0;
+        var code = verificationCodeGenerator.Generate();
+
+        await commandBus.PublishAsync(new ResendCodeCommand(
+            AppCodeId.Create(phoneNumber, obj.PhoneCodeHash),
+            input.ToRequestInfo() with { UserId = userId },
+            userId,
+            phoneNumber,
+            code,
+            obj.PhoneCodeHash,
+            DateTime.UtcNow.ToTimestamp()));
+
+        return new TSentCode
+        {
+            Type = new TSentCodeTypeSms { Length = code.Length },
+            PhoneCodeHash = obj.PhoneCodeHash,
+            Timeout = options.CurrentValue.VerificationCodeExpirationSeconds
+        };
     }
 }

@@ -2,6 +2,7 @@
 
 public class AppCodeState : AggregateState<AppCodeAggregate, AppCodeId, AppCodeState>,
     IApply<AppCodeCreatedEvent>,
+    IApply<AppCodeResentEvent>,
     IApply<AppCodeCanceledEvent>,
     IApply<SignUpRequiredSagaEvent>,
     //IApply<AppCodeCheckFailedEvent>,
@@ -37,6 +38,13 @@ public class AppCodeState : AggregateState<AppCodeAggregate, AppCodeId, AppCodeS
     {
         PhoneNumber = aggregateEvent.PhoneNumber;
         PhoneCodeHash = aggregateEvent.PhoneCodeHash;
+        Code = aggregateEvent.Code;
+        Expire = aggregateEvent.Expire;
+        FailedCount = 0;
+    }
+
+    public void Apply(AppCodeResentEvent aggregateEvent)
+    {
         Code = aggregateEvent.Code;
         Expire = aggregateEvent.Expire;
         FailedCount = 0;

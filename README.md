@@ -198,10 +198,10 @@ docker compose up -d --force-recreate file-server
 
 ### CI (GitHub Actions)
 
-[`.github/workflows/docker-build.yml`](.github/workflows/docker-build.yml) builds the six services this fork
+[`.github/workflows/docker-build.yml`](.github/workflows/docker-build.yml) builds the six .NET services this fork
 carries source for — `messenger-command-server`, `messenger-query-server`, `gateway-server`, `auth-server`,
-`sms-sender`, `data-seeder` — and pushes them to GHCR on every push to `dev` and on `v*.*.*` tags (pull requests
-build but don't push). Images are published as:
+`sms-sender`, `data-seeder` — plus the Python verification bot (`testgram-bot`), and pushes them to GHCR on every
+push to `dev` and on `v*.*.*` tags (pull requests build but don't push). Images are published as:
 
 ```
 ghcr.io/is-a-developers/testgram/<service-name>:latest
@@ -246,7 +246,19 @@ cd build/docker && ./build-all-arm64.sh
 
 ## Verification Bot
 
-The repo includes a Telegram bot (`bot/`) that listens for registration codes via RabbitMQ and sends them to users via Telegram.
+The repo includes a Telegram bot (`bot/`) that delivers login/verification codes to the Telegram account a user
+linked their phone number with (`/start` → add number). `sms-sender` calls its `/send` HTTP endpoint whenever
+`auth.sendCode`/`auth.resendCode` issues a code; it can optionally also consume `AppCodeCreatedIntegrationEvent`
+straight off RabbitMQ (`ENABLE_RABBITMQ_CONSUMER=true`).
+
+**Docker (recommended, already wired into `docker-compose.yml`):**
+
+```bash
+# In .env: set BOT_TOKEN (and optionally BOT_TOKEN1, BOT_TOKEN2, ...)
+docker compose up -d bot
+```
+
+**Manual (without Docker):**
 
 ```bash
 cd bot

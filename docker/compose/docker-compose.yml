@@ -700,9 +700,36 @@ services:
       #RabbitMQ__EventBus__ClientName: ${RabbitMQ__EventBus__ClientName}
       RabbitMQ__EventBus__ExchangeName: ${RabbitMQ__EventBus__ExchangeName}
       TelegramBotSms__Enabled: "true"
-      TelegramBotSms__SenderApiUrl: http://172.18.0.1:5005/send
+      TelegramBotSms__SenderApiUrl: http://bot:5005/send
     volumes:
       - ./data/mytelegram/sms-sender/logs:/app/Logs
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      bot:
+        condition: service_healthy
+
+  ### 8.Verification bot (delivers login codes to Telegram accounts that linked a phone number)
+  bot:
+    image: ${TestgramRegistry}/testgram-bot:${TestgramVersion}
+    restart: always
+    networks:
+      - tg-net
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      BOT_TOKEN1: ${BOT_TOKEN1:-}
+      BOT_TOKEN2: ${BOT_TOKEN2:-}
+      PROXY_URL: ${PROXY_URL:-}
+      DB_PATH: /data/codes.db
+      ENABLE_RABBITMQ_CONSUMER: ${ENABLE_RABBITMQ_CONSUMER:-false}
+      RABBITMQ_URL: amqp://${RabbitMQ__Connections__Default__UserName:-test}:${RabbitMQ__Connections__Default__Password}@rabbitmq/
+    volumes:
+      - ./data/bot:/data
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import socket; socket.create_connection(('localhost', 5005), 2)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     depends_on:
       rabbitmq:
         condition: service_healthy

@@ -10,11 +10,25 @@ namespace MyTelegram.Messenger.Handlers.LatestLayer.Auth;
 /// <remarks>
 /// Access: [User ✔] [Bot ✖] [Anonymous ✔]
 /// </remarks>
-internal sealed class CancelCodeHandler : RpcResultObjectHandler<MyTelegram.Schema.Auth.RequestCancelCode, IBool>
+internal sealed class CancelCodeHandler(ICommandBus commandBus, IQueryProcessor queryProcessor)
+    : RpcResultObjectHandler<MyTelegram.Schema.Auth.RequestCancelCode, IBool>
 {
-    protected override Task<IBool> HandleCoreAsync(IRequestInput input, RequestCancelCode obj)
+    protected override async Task<IBool> HandleCoreAsync(IRequestInput input, RequestCancelCode obj)
     {
-        // todo:cancel code
-        return Task.FromResult<IBool>(new TBoolTrue());
+        var phoneNumber = obj.PhoneNumber.ToPhoneNumber();
+        if (!long.TryParse(phoneNumber, out _))
+            RpcErrors.RpcErrors400.PhoneNumberInvalid.ThrowRpcError();
+
+        var appCode = await queryProcessor.ProcessAsync(new GetLatestAppCodeQuery(phoneNumber, obj.PhoneCodeHash));
+        if (appCode == null || appCode.Expire < DateTime.UtcNow.ToTimestamp())
+            RpcErrors.RpcErrors400.PhoneCodeExpired.ThrowRpcError();
+
+        await commandBus.PublishAsync(new CancelCodeCommand(
+            AppCodeId.Create(phoneNumber, obj.PhoneCodeHash),
+            input.ToRequestInfo(),
+            phoneNumber,
+            obj.PhoneCodeHash));
+
+        return new TBoolTrue();
     }
 }
