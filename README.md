@@ -44,14 +44,15 @@
 
 See **[deploy/DEPLOYMENT-example.md](deploy/DEPLOYMENT-example.md)** for complete Proxmox, Cloudflare, NPM, secrets, bot, and client setup.
 
-Quick install on Debian LXC/VM:
+Quick install (interactive Docker wizard):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/install-lxc.sh -o install-lxc.sh
-bash install-lxc.sh
+curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/install.sh -o install.sh
+sudo bash install.sh
 ```
 
-Do **not** use `curl ... | bash` — that breaks interactive prompts. Save the file first, then run it.
+Save the file first — do **not** use `curl ... | bash` (breaks prompts).  
+Proxmox LXC: `deploy/install-lxc.sh` is a thin wrapper around the same installer.
 
 ### Quick Start with Docker
 

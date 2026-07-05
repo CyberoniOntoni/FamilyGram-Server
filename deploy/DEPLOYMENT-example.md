@@ -159,12 +159,14 @@ ssh root@192.168.1.79
 
 ### Interactive install (recommended)
 
-The installer walks you through public IP, LAN IP, ports, branding, and bot token, then prints a **router port-forward checklist** at the end.
+`deploy/install.sh` is the Docker interactive wizard — public IP, LAN IP, ports, branding, bot token, then a **port-forward checklist**.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/install-lxc.sh -o /tmp/install-lxc.sh
-bash /tmp/install-lxc.sh
+curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/install.sh -o /tmp/install.sh
+sudo bash /tmp/install.sh
 ```
+
+Do **not** pipe to bash (`curl ... | bash`) — save the file first.
 
 ### Non-interactive (AcmeChat defaults)
 
@@ -175,15 +177,17 @@ BRAND=AcmeChat \
 PASSKEY_DOMAIN=tg.acmechat.example \
 ENABLE_PASSKEY=yes \
 BOT_TOKEN='YOUR_BOTFATHER_TOKEN' \
-bash /tmp/install-lxc.sh --non-interactive --start
+sudo bash /tmp/install.sh --non-interactive --start
 ```
 
 ### Or from a cloned repo
 
 ```bash
 git clone -b dev https://github.com/CyberoniOntoni/testgram.git /opt/testgram
-bash /opt/testgram/deploy/install-lxc.sh
+sudo bash /opt/testgram/deploy/install.sh
 ```
+
+Proxmox LXC: `deploy/install-lxc.sh` runs the same installer with LXC nesting checks.
 
 The installer:
 
