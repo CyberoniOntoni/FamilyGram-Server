@@ -149,23 +149,55 @@ On NPM (`192.168.1.67`):
 
 ---
 
-## 6. Bootstrap the Debian host
+## 6. Bootstrap the Debian LXC / VM host
 
-SSH into the VM:
+SSH into the container:
 
 ```bash
 ssh root@192.168.1.79
 ```
 
-Run the bootstrap script from the repo:
+### One-line install (recommended)
 
 ```bash
-git clone https://github.com/CyberoniOntoni/testgram.git /opt/testgram
-cd /opt/testgram
-bash deploy/setup-debian.sh
+curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/install-lxc.sh -o /tmp/install-lxc.sh
+BOT_TOKEN='YOUR_BOTFATHER_TOKEN' bash /tmp/install-lxc.sh --start
 ```
 
-This installs Docker, configures UFW, clones the repo, copies `.env.acmechat.example.example` → `.env`, and creates data directories.
+### Or from a cloned repo
+
+```bash
+git clone -b dev https://github.com/CyberoniOntoni/testgram.git /opt/testgram
+BOT_TOKEN='YOUR_BOTFATHER_TOKEN' bash /opt/testgram/deploy/install-lxc.sh --start
+```
+
+### Install without starting (configure BOT_TOKEN first)
+
+```bash
+bash /opt/testgram/deploy/install-lxc.sh
+nano /opt/testgram/docker/compose/.env   # set BOT_TOKEN
+bash /opt/testgram/deploy/install-lxc.sh --start
+```
+
+The installer:
+
+- Installs Docker and dependencies
+- Clones/updates the `dev` branch to `/opt/testgram`
+- Creates `.env` from `.env.acmechat.example.example` with auto-generated secrets
+- Configures UFW (MTProto, STUN/TURN on **5348**, relay ports)
+- With `--start`: pulls GHCR images and runs `docker compose up -d`
+
+### Proxmox LXC requirements
+
+Docker needs nesting enabled on the CT:
+
+```bash
+# On Proxmox host:
+pct set <CTID> -features nesting=1,keyctl=1
+# Restart the container after changing features
+```
+
+Or use a **privileged** LXC container.
 
 ---
 

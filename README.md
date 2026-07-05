@@ -44,6 +44,13 @@
 
 See **[deploy/DEPLOYMENT-example.md](deploy/DEPLOYMENT-example.md)** for complete Proxmox, Cloudflare, NPM, secrets, bot, and client setup.
 
+Quick install on Debian LXC/VM:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/install-lxc.sh -o install-lxc.sh
+BOT_TOKEN='your_token' bash install-lxc.sh --start
+```
+
 ### Quick Start with Docker
 
 1. Get the Docker Compose setup. `docker-compose.yml` bind-mounts several helper scripts
