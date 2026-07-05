@@ -42,8 +42,6 @@
 
 ### Full deployment guide (AcmeChat / Proxmox)
 
-See **[deploy/DEPLOYMENT-example.md](deploy/DEPLOYMENT-example.md)** for complete Proxmox, Cloudflare, NPM, secrets, bot, and client setup.
-
 Quick install (interactive Docker wizard, v3.1.2):
 
 ```bash
