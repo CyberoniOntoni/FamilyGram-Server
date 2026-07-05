@@ -19,14 +19,10 @@ have_tty() {
   [[ -r /dev/tty ]] && [[ -w /dev/tty ]]
 }
 
-tty_enable_echo() {
-  if have_tty; then
-    stty sane < /dev/tty 2>/dev/null || true
-    stty echo icanon < /dev/tty 2>/dev/null || true
-  elif [[ -t 0 ]]; then
-    stty sane 2>/dev/null || true
-    stty echo icanon 2>/dev/null || true
-  fi
+tty_enable_echo_on_fd() {
+  # stty must target the same fd used by read — call inside { } < /dev/tty blocks
+  stty sane 2>/dev/null || true
+  stty echo icanon 2>/dev/null || true
 }
 
 interactive_tty() {
@@ -162,13 +158,7 @@ setup_interactive_stdin() {
   if [[ "${NON_INTERACTIVE}" == true ]]; then
     return 0
   fi
-  if have_tty; then
-    # Attach stdin + stderr to the real terminal (sudo-safe, log redirection-safe)
-    exec 0</dev/tty 2>/dev/tty
-    tty_enable_echo
-    return 0
-  fi
-  if [[ -t 0 ]]; then
+  if have_tty || [[ -t 0 ]]; then
     return 0
   fi
   die "No interactive terminal.
@@ -196,21 +186,20 @@ read_with_prompt() {
   local __prompt="$2"
   local __line=""
 
-  # Never use read -p (prompt goes to stderr). After exec 0</dev/tty, read stdin
-  # so terminal echo works — reading < /dev/tty directly hides typed characters.
+  # Prompt + read on the same tty with echo enabled (stdin and stdout both /dev/tty).
+  # Reading < /dev/tty without this breaks character echo on many consoles (SSH, LXC, sudo).
   if interactive_tty; then
-    tty_write '%s' "$__prompt"
-    tty_enable_echo
-    if ! IFS= read -r -e __line 2>/dev/null; then
-      if ! IFS= read -r __line; then
-        die "Could not read input from terminal. Try: ssh -t root@host"
-      fi
-    fi
-  else
+    {
+      tty_enable_echo_on_fd
+      printf '%s' "$__prompt"
+      IFS= read -r __line
+    } < /dev/tty > /dev/tty
+  elif [[ -t 0 ]]; then
+    tty_enable_echo_on_fd
     printf '%s' "$__prompt" >&2
-    if ! IFS= read -r __line; then
-      die "Could not read input. Use an SSH session with a TTY (ssh -t root@host)."
-    fi
+    IFS= read -r __line || die "Could not read input."
+  else
+    die "No terminal for input. Connect with: ssh -t root@host"
   fi
   __line="$(trim_line "$__line")"
   printf -v "$__var" '%s' "$__line"
