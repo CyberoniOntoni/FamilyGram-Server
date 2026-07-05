@@ -49,6 +49,10 @@ is_yes "no" && fail "is_yes no should fail"
 escaped="$(escape_sed_repl 'a&b|c\d/e')"
 [[ "$escaped" == 'a\&b\|c\\d/e' ]] || fail "escape_sed_repl got: $escaped"
 
+[[ "$(port_with_proto 5348 'TCP&UDP')" == '5348(TCP&UDP)' ]] || fail "port_with_proto TCP&UDP"
+[[ "$(port_with_proto 20443 TCP)" == '20443(TCP)' ]] || fail "port_with_proto TCP"
+[[ "$(port_with_proto 49152-49172 UDP)" == '49152-49172(UDP)' ]] || fail "port_with_proto UDP range"
+
 printf '==> set_env sed safety\n'
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "${tmpdir}"' EXIT

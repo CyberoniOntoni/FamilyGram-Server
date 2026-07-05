@@ -143,6 +143,13 @@ is_port() {
   return 0
 }
 
+# Format WAN port for router/firewall tables: 5348(TCP&UDP), 49152-49172(UDP), etc.
+port_with_proto() {
+  local port="$1"
+  local proto="$2"
+  printf '%s(%s)' "$port" "$proto"
+}
+
 is_yes() {
   case "${1,,}" in
     true|yes|1) return 0 ;;
@@ -570,23 +577,24 @@ configure_firewall() {
 print_port_forwards() {
   ui_printf '\n%sRouter / firewall — open these ports%s\n' "${C_CYAN}${C_BOLD}" "${C_RESET}"
   ui_printf '%s\n' "Forward WAN → ${LAN_IP} on your router (or allow on cloud firewall):"
+  ui_printf '%s\n' "Notation: port(PROTO) — TCP&UDP means create both TCP and UDP rules to the same port."
   hr
-  ui_printf '  %-14s %-10s %-38s %s\n' "PORT" "PROTO" "SERVICE" "REQUIRED"
+  ui_printf '  %-22s %-38s %s\n' "WAN PORT" "SERVICE" "REQUIRED"
   hr
-  ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_MT1" "TCP" "MTProto DC1 (main client entry)" "yes"
-  ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_MT2" "TCP" "MTProto DC2" "yes"
-  ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_MT3" "TCP" "MTProto DC3" "yes"
-  ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_MT4" "TCP" "MTProto DC4 (media)" "yes"
-  ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_STUN" "TCP+UDP" "STUN/TURN (voice/video)" "yes"
-  ui_printf '  %-14s %-10s %-38s %s\n' "${PORT_RELAY_MIN}-${PORT_RELAY_MAX}" "UDP" "TURN relay media" "yes"
+  ui_printf '  %-22s %-38s %s\n' "$(port_with_proto "$PORT_MT1" TCP)" "MTProto DC1 (main client entry)" "yes"
+  ui_printf '  %-22s %-38s %s\n' "$(port_with_proto "$PORT_MT2" TCP)" "MTProto DC2" "yes"
+  ui_printf '  %-22s %-38s %s\n' "$(port_with_proto "$PORT_MT3" TCP)" "MTProto DC3" "yes"
+  ui_printf '  %-22s %-38s %s\n' "$(port_with_proto "$PORT_MT4" TCP)" "MTProto DC4 (media)" "yes"
+  ui_printf '  %-22s %-38s %s\n' "$(port_with_proto "$PORT_STUN" 'TCP&UDP')" "STUN/TURN (voice/video)" "yes"
+  ui_printf '  %-22s %-38s %s\n' "$(port_with_proto "${PORT_RELAY_MIN}-${PORT_RELAY_MAX}" UDP)" "TURN relay media" "yes"
   if [[ "${ENABLE_PASSKEY}" == "yes" ]]; then
-    ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_HTTPS" "TCP" "HTTPS (passkey / web)" "yes"
+    ui_printf '  %-22s %-38s %s\n' "$(port_with_proto "$PORT_HTTPS" TCP)" "HTTPS (passkey / web)" "yes"
   else
-    ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_HTTPS" "TCP" "HTTPS (passkey / web)" "optional"
+    ui_printf '  %-22s %-38s %s\n' "$(port_with_proto "$PORT_HTTPS" TCP)" "HTTPS (passkey / web)" "optional"
   fi
   if [[ "${ENABLE_RTMP}" == "yes" ]]; then
-    ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_RTMP" "TCP" "RTMP live streaming" "optional"
-    ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_RTMP_HLS" "TCP" "RTMP HLS playback" "optional"
+    ui_printf '  %-22s %-38s %s\n' "$(port_with_proto "$PORT_RTMP" TCP)" "RTMP live streaming" "optional"
+    ui_printf '  %-22s %-38s %s\n' "$(port_with_proto "$PORT_RTMP_HLS" TCP)" "RTMP HLS playback" "optional"
   fi
   hr
   ui_printf '\n%sClient build IP:%s %s\n' "${C_BOLD}" "${C_RESET}" "${PUBLIC_IP}"
@@ -611,11 +619,14 @@ print_config_review() {
   ui_printf '  %-22s %s\n' "LAN / host IP:" "${LAN_IP}"
   ui_printf '  %-22s %s\n' "Brand:" "${BRAND}"
   ui_printf '  %-22s %s\n' "Passkey:" "${ENABLE_PASSKEY} (${PASSKEY_DOMAIN})"
-  ui_printf '  %-22s %s\n' "MTProto:" "${PORT_MT1}, ${PORT_MT2}, ${PORT_MT3}, ${PORT_MT4}"
-  ui_printf '  %-22s %s\n' "HTTPS:" "${PORT_HTTPS}"
-  ui_printf '  %-22s %s\n' "STUN/TURN:" "${PORT_STUN} tcp+udp, relay ${PORT_RELAY_MIN}-${PORT_RELAY_MAX} udp"
+  ui_printf '  %-22s %s\n' "MTProto:" \
+    "$(port_with_proto "$PORT_MT1" TCP), $(port_with_proto "$PORT_MT2" TCP), $(port_with_proto "$PORT_MT3" TCP), $(port_with_proto "$PORT_MT4" TCP)"
+  ui_printf '  %-22s %s\n' "HTTPS:" "$(port_with_proto "$PORT_HTTPS" TCP)"
+  ui_printf '  %-22s %s\n' "STUN/TURN:" \
+    "$(port_with_proto "$PORT_STUN" 'TCP&UDP'), relay $(port_with_proto "${PORT_RELAY_MIN}-${PORT_RELAY_MAX}" UDP)"
   if [[ "${ENABLE_RTMP}" == "yes" ]]; then
-    ui_printf '  %-22s %s\n' "RTMP:" "${PORT_RTMP} / HLS ${PORT_RTMP_HLS}"
+    ui_printf '  %-22s %s\n' "RTMP:" \
+      "$(port_with_proto "$PORT_RTMP" TCP) / HLS $(port_with_proto "$PORT_RTMP_HLS" TCP)"
   fi
   ui_printf '  %-22s %s\n' "Install Docker:" "${INSTALL_DOCKER}"
   ui_printf '  %-22s %s\n' "Configure UFW:" "${DO_FIREWALL}"
@@ -710,27 +721,28 @@ run_install_wizard() {
   fi
 
   step 4 "$total_steps" "Ports"
+  ui_printf '%s\n' "Port notation: number(PROTO) — TCP, UDP, or TCP&UDP (both protocols on same port)."
   prompt_yes_no CUSTOMIZE_PORTS "Customize service ports? (No = use Testgram defaults)" "no"
   if [[ "${CUSTOMIZE_PORTS}" == "yes" ]]; then
-    prompt PORT_MT1 "MTProto DC1 (main)" "$PORT_MT1" is_port
-    prompt PORT_MT2 "MTProto DC2" "$PORT_MT2" is_port
-    prompt PORT_MT3 "MTProto DC3" "$PORT_MT3" is_port
-    prompt PORT_MT4 "MTProto DC4 (media)" "$PORT_MT4" is_port
-    prompt PORT_HTTPS "HTTPS / web" "$PORT_HTTPS" is_port
-    prompt PORT_STUN "STUN/TURN (tcp+udp)" "$PORT_STUN" is_port
-    prompt PORT_RELAY_MIN "TURN relay range start" "$PORT_RELAY_MIN" is_port
-    prompt PORT_RELAY_MAX "TURN relay range end" "$PORT_RELAY_MAX" is_port
+    prompt PORT_MT1 "MTProto DC1 (main) — TCP only" "$PORT_MT1" is_port
+    prompt PORT_MT2 "MTProto DC2 — TCP only" "$PORT_MT2" is_port
+    prompt PORT_MT3 "MTProto DC3 — TCP only" "$PORT_MT3" is_port
+    prompt PORT_MT4 "MTProto DC4 (media) — TCP only" "$PORT_MT4" is_port
+    prompt PORT_HTTPS "HTTPS / web — TCP only" "$PORT_HTTPS" is_port
+    prompt PORT_STUN "STUN/TURN — TCP&UDP (forward both)" "$PORT_STUN" is_port
+    prompt PORT_RELAY_MIN "TURN relay range start — UDP only" "$PORT_RELAY_MIN" is_port
+    prompt PORT_RELAY_MAX "TURN relay range end — UDP only" "$PORT_RELAY_MAX" is_port
     if (( PORT_RELAY_MIN >= PORT_RELAY_MAX )); then
       die "Relay range invalid: ${PORT_RELAY_MIN} must be < ${PORT_RELAY_MAX}"
     fi
   else
-    log "Using default ports (MTProto 20443-20644, STUN/TURN 5348, relay 49152-49172)"
+    log "Default ports: $(port_with_proto 20443 TCP),$(port_with_proto 20543 TCP),$(port_with_proto 20643 TCP),$(port_with_proto 20644 TCP); $(port_with_proto 5348 'TCP&UDP'); relay $(port_with_proto 49152-49172 UDP)"
   fi
 
   prompt_yes_no ENABLE_RTMP "Expose RTMP live streaming ports?" "no"
   if [[ "${ENABLE_RTMP}" == "yes" ]]; then
-    prompt PORT_RTMP "RTMP port" "$PORT_RTMP" is_port
-    prompt PORT_RTMP_HLS "RTMP HLS port" "$PORT_RTMP_HLS" is_port
+    prompt PORT_RTMP "RTMP port — TCP only" "$PORT_RTMP" is_port
+    prompt PORT_RTMP_HLS "RTMP HLS port — TCP only" "$PORT_RTMP_HLS" is_port
   fi
 
   step 5 "$total_steps" "Bot & Docker options"
