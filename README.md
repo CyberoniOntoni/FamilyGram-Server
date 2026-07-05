@@ -47,7 +47,7 @@
    so clone the repo rather than downloading `docker-compose.yml` on its own:
 
 ```bash
-git clone --depth 1 https://github.com/is-a-developers/testgram.git
+git clone --depth 1 https://github.com/CyberoniOntoni/testgram.git
 cd testgram/docker/compose
 cp .env.example .env
 ```
@@ -210,9 +210,9 @@ carries source for — `messenger-command-server`, `messenger-query-server`, `ga
 push to `dev` and on `v*.*.*` tags (pull requests build but don't push). Images are published as:
 
 ```
-ghcr.io/is-a-developers/testgram/<service-name>:latest
-ghcr.io/is-a-developers/testgram/<service-name>:<version>   # from build/version.txt
-ghcr.io/is-a-developers/testgram/<service-name>:<git-sha>
+ghcr.io/CyberoniOntoni/testgram/<service-name>:latest
+ghcr.io/CyberoniOntoni/testgram/<service-name>:<version>   # from build/version.txt
+ghcr.io/CyberoniOntoni/testgram/<service-name>:<git-sha>
 ```
 
 `docker-compose.yml` already points at these images through `TestgramRegistry`/`TestgramVersion` in `.env`
@@ -221,7 +221,7 @@ and `file-server` aren't part of this fork's source, so they keep pulling prebui
 MyTelegram registry via the separate `MyTelegramRegistry`/`MyTelegramVersion` variables.
 
 > GHCR packages are private by default even on a public repo. The first time the workflow runs, make each
-> `ghcr.io/is-a-developers/testgram/<service-name>` package public under the repo/org's **Packages** settings,
+> `ghcr.io/CyberoniOntoni/testgram/<service-name>` package public under the repo/org's **Packages** settings,
 > or `docker login ghcr.io` with a token that has `read:packages` before pulling.
 
 You can also trigger a build manually from the **Actions** tab (`workflow_dispatch`).
@@ -229,18 +229,18 @@ You can also trigger a build manually from the **Actions** tab (`workflow_dispat
 ### Local build
 
 `build/docker/*.sh` default to tagging images as `mytelegram/<service-name>`. `docker-compose.yml` pulls
-`${TestgramRegistry}/<service-name>:${TestgramVersion}` (default `ghcr.io/is-a-developers/testgram`), so set
+`${TestgramRegistry}/<service-name>:${TestgramVersion}` (default `ghcr.io/CyberoniOntoni/testgram`), so set
 `REGISTRY_URL` to the same value before building, or `docker compose up -d` will just re-pull from GHCR instead
 of using your local build:
 
 ```bash
 # Linux amd64
 cd build/docker
-export REGISTRY_URL="ghcr.io/is-a-developers/testgram"   # match TestgramRegistry in .env
+export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"   # match TestgramRegistry in .env
 ./build-all-amd64.sh
 
 # Linux arm64
-export REGISTRY_URL="ghcr.io/is-a-developers/testgram"
+export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"
 ./build-all-arm64.sh
 ```
 
@@ -442,7 +442,7 @@ python3 seed_reactions.py --generate-handler
 
 # 4. Rebuild and redeploy messenger images
 cd ../build/docker
-export REGISTRY_URL="ghcr.io/is-a-developers/testgram"   # match TestgramRegistry in .env
+export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"   # match TestgramRegistry in .env
 bash 1.build-messenger-command-server.sh
 bash 2.build-messenger-query-server.sh
 cd ../../docker/compose && docker compose down && docker compose up -d

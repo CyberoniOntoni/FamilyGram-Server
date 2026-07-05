@@ -666,7 +666,7 @@ services:
       MYTELEGRAM_GEOIP_COUNTRY_DB: ${MYTELEGRAM_GEOIP_COUNTRY_DB:-/geoip/GeoLite2-City.mmdb}
     volumes:
       - ./data/mytelegram/query-server/logs:/app/Logs
-      - /var/www/html/update.json:/app/update.json:ro
+      - ./update.json:/app/update.json:ro
       - ./geoip:/geoip:ro
     depends_on:
       mongodb:

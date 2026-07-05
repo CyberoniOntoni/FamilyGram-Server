@@ -46,7 +46,7 @@
    склонируйте репозиторий целиком, а не скачивайте один `docker-compose.yml`:
 
 ```bash
-git clone --depth 1 https://github.com/is-a-developers/testgram.git
+git clone --depth 1 https://github.com/CyberoniOntoni/testgram.git
 cd testgram/docker/compose
 cp .env.example .env
 ```
@@ -211,9 +211,9 @@ docker compose up -d --force-recreate file-server
 push в `dev` и при тегах `v*.*.*` (в pull request'ах только сборка, без публикации). Образы публикуются как:
 
 ```
-ghcr.io/is-a-developers/testgram/<service-name>:latest
-ghcr.io/is-a-developers/testgram/<service-name>:<version>   # из build/version.txt
-ghcr.io/is-a-developers/testgram/<service-name>:<git-sha>
+ghcr.io/CyberoniOntoni/testgram/<service-name>:latest
+ghcr.io/CyberoniOntoni/testgram/<service-name>:<version>   # из build/version.txt
+ghcr.io/CyberoniOntoni/testgram/<service-name>:<git-sha>
 ```
 
 `docker-compose.yml` уже ссылается на эти образы через `TestgramRegistry`/`TestgramVersion` в `.env` (см.
@@ -222,7 +222,7 @@ ghcr.io/is-a-developers/testgram/<service-name>:<git-sha>
 через отдельные переменные `MyTelegramRegistry`/`MyTelegramVersion`.
 
 > Пакеты GHCR по умолчанию приватные даже в публичном репозитории. При первом запуске workflow сделайте каждый
-> пакет `ghcr.io/is-a-developers/testgram/<service-name>` публичным в настройках **Packages** репозитория/организации,
+> пакет `ghcr.io/CyberoniOntoni/testgram/<service-name>` публичным в настройках **Packages** репозитория/организации,
 > либо выполните `docker login ghcr.io` с токеном с правом `read:packages` перед `docker compose pull`.
 
 Собрать вручную можно из вкладки **Actions** (`workflow_dispatch`).
@@ -230,18 +230,18 @@ ghcr.io/is-a-developers/testgram/<service-name>:<git-sha>
 ### Локальная сборка
 
 Скрипты `build/docker/*.sh` по умолчанию тегируют образы как `mytelegram/<service-name>`. `docker-compose.yml`
-использует `${TestgramRegistry}/<service-name>:${TestgramVersion}` (по умолчанию `ghcr.io/is-a-developers/testgram`),
+использует `${TestgramRegistry}/<service-name>:${TestgramVersion}` (по умолчанию `ghcr.io/CyberoniOntoni/testgram`),
 поэтому перед сборкой установите `REGISTRY_URL` в то же значение — иначе `docker compose up -d` просто заново
 скачает образ из GHCR вместо локально собранного:
 
 ```bash
 # Linux amd64
 cd build/docker
-export REGISTRY_URL="ghcr.io/is-a-developers/testgram"   # должно совпадать с TestgramRegistry в .env
+export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"   # должно совпадать с TestgramRegistry в .env
 ./build-all-amd64.sh
 
 # Linux arm64
-export REGISTRY_URL="ghcr.io/is-a-developers/testgram"
+export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"
 ./build-all-arm64.sh
 ```
 
@@ -442,7 +442,7 @@ python3 seed_reactions.py --generate-handler
 
 # 4. Пересобрать и задеплоить образы messenger
 cd ../build/docker
-export REGISTRY_URL="ghcr.io/is-a-developers/testgram"   # должно совпадать с TestgramRegistry в .env
+export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"   # должно совпадать с TestgramRegistry в .env
 bash 1.build-messenger-command-server.sh
 bash 2.build-messenger-query-server.sh
 cd ../../docker/compose && docker compose down && docker compose up -d
