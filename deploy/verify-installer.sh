@@ -23,6 +23,9 @@ installer_lib_init
 
 is_ipv4 "203.0.113.50" || fail "valid public IP rejected"
 is_ipv4 "192.168.1.79" || fail "valid LAN IP rejected"
+# Regression: 10#o without braces must not error (bash parses as invalid base)
+is_ipv4 "203.0.113.50" >/dev/null 2>&1 || fail "re-validation failed"
+is_ipv4 "10.0.0.08" || fail "10.0.0.08 should be valid (decimal 08)"
 is_ipv4 "10.0.0.1" || fail "10.0.0.1 rejected"
 is_ipv4 "8.8.8.8" || fail "8.8.8.8 rejected"
 is_ipv4 "0.0.0.0" || fail "0.0.0.0 rejected"

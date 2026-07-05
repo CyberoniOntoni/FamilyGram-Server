@@ -117,8 +117,8 @@ is_ipv4() {
 
   for o in "$a" "$b" "$c" "$d"; do
     [[ "$o" =~ ^[0-9]{1,3}$ ]] || return 1
-    # 10# forces decimal (avoids octal quirks on 08/09)
-    if ((10#o > 255)); then
+    # 10#${o} forces decimal (08/09 octets); braces are required in bash arithmetic
+    if ((10#${o} > 255)); then
       return 1
     fi
   done
