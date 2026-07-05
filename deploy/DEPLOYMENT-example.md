@@ -157,35 +157,44 @@ SSH into the container:
 ssh root@192.168.1.79
 ```
 
-### One-line install (recommended)
+### Interactive install (recommended)
+
+The installer walks you through public IP, LAN IP, ports, branding, and bot token, then prints a **router port-forward checklist** at the end.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/install-lxc.sh -o /tmp/install-lxc.sh
-BOT_TOKEN='YOUR_BOTFATHER_TOKEN' bash /tmp/install-lxc.sh --start
+bash /tmp/install-lxc.sh
+```
+
+### Non-interactive (AcmeChat defaults)
+
+```bash
+PUBLIC_IP=203.0.113.50 \
+LAN_IP=192.168.1.79 \
+BRAND=AcmeChat \
+PASSKEY_DOMAIN=tg.acmechat.example \
+ENABLE_PASSKEY=yes \
+BOT_TOKEN='YOUR_BOTFATHER_TOKEN' \
+bash /tmp/install-lxc.sh --non-interactive --start
 ```
 
 ### Or from a cloned repo
 
 ```bash
 git clone -b dev https://github.com/CyberoniOntoni/testgram.git /opt/testgram
-BOT_TOKEN='YOUR_BOTFATHER_TOKEN' bash /opt/testgram/deploy/install-lxc.sh --start
-```
-
-### Install without starting (configure BOT_TOKEN first)
-
-```bash
 bash /opt/testgram/deploy/install-lxc.sh
-nano /opt/testgram/docker/compose/.env   # set BOT_TOKEN
-bash /opt/testgram/deploy/install-lxc.sh --start
 ```
 
 The installer:
 
 - Installs Docker and dependencies
 - Clones/updates the `dev` branch to `/opt/testgram`
-- Creates `.env` from `.env.acmechat.example.example` with auto-generated secrets
-- Configures UFW (MTProto, STUN/TURN on **5348**, relay ports)
-- With `--start`: pulls GHCR images and runs `docker compose up -d`
+- Prompts for WAN IP, LAN IP, ports, brand, passkey domain, and `BOT_TOKEN`
+- Creates `.env` from `.env.example` with auto-generated secrets
+- Patches Coturn ports/credentials in `docker-compose.yml` to match your choices
+- Configures UFW (MTProto, STUN/TURN on **5348** by default, relay ports)
+- Prints required router port forwards → your LAN IP
+- With `--start` (or when you confirm at the end): pulls GHCR images and runs `docker compose up -d`
 
 ### Proxmox LXC requirements
 
