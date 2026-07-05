@@ -23,7 +23,7 @@
 #   --help               show help
 set -euo pipefail
 
-INSTALLER_VERSION="3.0.6"
+INSTALLER_VERSION="3.0.7"
 
 REPO_URL="${REPO_URL:-https://github.com/CyberoniOntoni/testgram.git}"
 REPO_BRANCH="${REPO_BRANCH:-dev}"

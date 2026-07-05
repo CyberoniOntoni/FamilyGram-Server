@@ -19,6 +19,16 @@ have_tty() {
   [[ -r /dev/tty ]] && [[ -w /dev/tty ]]
 }
 
+tty_enable_echo() {
+  if have_tty; then
+    stty sane < /dev/tty 2>/dev/null || true
+    stty echo icanon < /dev/tty 2>/dev/null || true
+  elif [[ -t 0 ]]; then
+    stty sane 2>/dev/null || true
+    stty echo icanon 2>/dev/null || true
+  fi
+}
+
 interactive_tty() {
   [[ "${NON_INTERACTIVE}" != true ]] && have_tty
 }
@@ -111,7 +121,8 @@ is_ipv4() {
 
   for o in "$a" "$b" "$c" "$d"; do
     [[ "$o" =~ ^[0-9]{1,3}$ ]] || return 1
-    if (( o > 255 )); then
+    # 10# forces decimal (avoids octal quirks on 08/09)
+    if ((10#o > 255)); then
       return 1
     fi
   done
@@ -154,6 +165,7 @@ setup_interactive_stdin() {
   if have_tty; then
     # Attach stdin + stderr to the real terminal (sudo-safe, log redirection-safe)
     exec 0</dev/tty 2>/dev/tty
+    tty_enable_echo
     return 0
   fi
   if [[ -t 0 ]]; then
@@ -184,12 +196,14 @@ read_with_prompt() {
   local __prompt="$2"
   local __line=""
 
-  # Never use read -p (it prints to stderr, which may not be the visible terminal).
+  # Never use read -p (prompt goes to stderr). After exec 0</dev/tty, read stdin
+  # so terminal echo works — reading < /dev/tty directly hides typed characters.
   if interactive_tty; then
     tty_write '%s' "$__prompt"
-    if ! IFS= read -r -e __line < /dev/tty 2>/dev/null; then
-      if ! IFS= read -r __line < /dev/tty; then
-        die "Could not read input from /dev/tty. Try: ssh -t root@host"
+    tty_enable_echo
+    if ! IFS= read -r -e __line 2>/dev/null; then
+      if ! IFS= read -r __line; then
+        die "Could not read input from terminal. Try: ssh -t root@host"
       fi
     fi
   else
@@ -231,7 +245,7 @@ prompt() {
     if [[ -n "$validate" ]]; then
       if ! "$validate" "$input"; then
         if [[ "$validate" == "is_ipv4" ]]; then
-          warn "Invalid IPv4 — use four decimal octets, e.g. 203.0.113.50"
+          warn "Invalid IPv4 — enter four dot-separated numbers (0-255 per octet)"
         elif [[ "$validate" == "is_domain" ]]; then
           warn "Invalid domain — use e.g. tg.example.com (no https://)"
         else
