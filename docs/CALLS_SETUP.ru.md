@@ -25,7 +25,7 @@ sudo systemctl enable coturn
 
 ```conf
 # Listening port
-listening-port=3478
+listening-port=5348
 tls-listening-port=5349
 
 # External IP (замените на IP вашего сервера)
@@ -70,8 +70,8 @@ sudo systemctl status coturn
 ### 4. Открытие портов в файрволе
 
 ```bash
-sudo ufw allow 3478/udp
-sudo ufw allow 3478/tcp
+sudo ufw allow 5348/udp
+sudo ufw allow 5348/tcp
 sudo ufw allow 49152:65535/udp  # Диапазон портов для relay
 ```
 
@@ -83,7 +83,7 @@ sudo ufw allow 49152:65535/udp  # Диапазон портов для relay
 # ОБЯЗАТЕЛЬНАЯ конфигурация для звонков
 App__WebRtcConnections__0__Ip=YOUR_SERVER_IP
 App__WebRtcConnections__0__Ipv6=
-App__WebRtcConnections__0__Port=3478
+App__WebRtcConnections__0__Port=5348
 App__WebRtcConnections__0__Turn=True
 App__WebRtcConnections__0__Stun=True
 App__WebRtcConnections__0__UserName=testgram
@@ -91,7 +91,7 @@ App__WebRtcConnections__0__Password=testgram123
 
 # Дополнительный сервер для резервирования (опционально)
 App__WebRtcConnections__1__Ip=BACKUP_SERVER_IP
-App__WebRtcConnections__1__Port=3478
+App__WebRtcConnections__1__Port=5348
 App__WebRtcConnections__1__Turn=True
 App__WebRtcConnections__1__Stun=True
 App__WebRtcConnections__1__UserName=testgram
@@ -157,7 +157,7 @@ docker compose logs -f messenger-command-server | grep -i call
 sudo apt-get install stuntman-client
 
 # Проверка STUN
-stunclient YOUR_SERVER_IP 3478
+stunclient YOUR_SERVER_IP 5348
 
 # Проверка TURN
 turnutils_uclient -v -u testgram -w testgram123 YOUR_SERVER_IP
@@ -247,7 +247,7 @@ sudo tail -f /var/log/turnserver.log
 
 2. Проверьте порты:
 ```bash
-sudo netstat -tulpn | grep 3478
+sudo netstat -tulpn | grep 5348
 ```
 
 3. Проверьте файрвол:

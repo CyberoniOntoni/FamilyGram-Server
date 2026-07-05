@@ -23,7 +23,7 @@ Self-hosted [Testgram](https://github.com/CyberoniOntoni/testgram) on Proxmox fo
 Internet clients (Android / Desktop)
         │
         │  MTProto TCP :20443, :20543, :20643, :20644
-        │  WebRTC UDP/TCP :3478, :49152-49172
+        │  WebRTC UDP/TCP :5348, :49152-49172
         ▼
 Router (port forward WAN → 192.168.1.79)
         ▼
@@ -82,7 +82,7 @@ Optional:
 | 20543 | TCP | MTProto |
 | 20643 | TCP | MTProto |
 | 20644 | TCP | MTProto |
-| 3478 | TCP + UDP | STUN/TURN |
+| 5348 | TCP + UDP | STUN/TURN (non-default; avoids Microsoft 3478–3481 range) |
 | 49152–49172 | UDP | TURN relay media |
 | 30443 | TCP | HTTPS web endpoint (optional, passkey) |
 | 1935 | TCP | RTMP live (optional) |
@@ -411,7 +411,7 @@ docker compose up -d --force-recreate file-server
 
 ### Voice/video calls fail
 
-1. Confirm Coturn ports forwarded (`3478`, `49152-49172/udp`).
+1. Confirm Coturn ports forwarded (`5348` TCP+UDP, `49152-49172/udp`).
 2. Confirm `.env` WebRTC IP is `203.0.113.50`.
 3. Credentials must match docker-compose coturn: `testgram` / `testgram2024`.
 

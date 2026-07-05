@@ -18,8 +18,8 @@ echo "==> Configuring firewall (UFW)..."
 ufw allow 22/tcp
 ufw allow 20443,20543,20643,20644/tcp
 ufw allow 30443,30444/tcp
-ufw allow 3478/tcp
-ufw allow 3478/udp
+ufw allow 5348/tcp
+ufw allow 5348/udp
 ufw allow 49152:49172/udp
 ufw allow 1935/tcp
 ufw allow 8888/tcp
@@ -52,7 +52,7 @@ echo "Next steps:"
 echo "  1. Edit ${COMPOSE_DIR}/.env"
 echo "     - DcOptions/WebRTC already use public IP 203.0.113.50 in .env.acmechat.example.example"
 echo "     - Set strong passwords and BOT_TOKEN from @BotFather"
-echo "  2. Forward router ports 20443,20543,20643,20644,3478,49152-49172 to 192.168.1.79"
+echo "  2. Forward router ports 20443,20543,20643,20644,5348,49152-49172 to 192.168.1.79"
 echo "  3. Optional Cloudflare DNS-only: tg.acmechat.example -> 203.0.113.50 (for passkey/NPM only)"
 echo "  4. docker compose pull && docker compose up -d"
 echo "  5. Verify: docker compose logs gateway-server | grep 20443"

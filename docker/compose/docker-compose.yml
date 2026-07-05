@@ -112,10 +112,8 @@ services:
     networks:
       - tg-net
     ports:
-      - "3478:3478"
-      - "3478:3478/udp"
-      - "3479:3479"
-      - "3479:3479/udp"
+      - "5348:5348"
+      - "5348:5348/udp"
       - "49152-49172:49152-49172/udp"
     volumes:
       - ./data/coturn:/var/lib/coturn
@@ -124,7 +122,7 @@ services:
       --external-ip ${App__WebRtcConnections__0__Ip:-127.0.0.1}
       --realm testgram
       --server-name testgram
-      --listening-port 3478
+      --listening-port 5348
       --min-port 49152
       --max-port 49172
       --fingerprint

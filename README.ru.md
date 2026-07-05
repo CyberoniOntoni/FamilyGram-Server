@@ -94,7 +94,7 @@ sudo systemctl start coturn
 ```bash
 # ОБЯЗАТЕЛЬНО для работы звонков
 App__WebRtcConnections__0__Ip=YOUR_SERVER_IP
-App__WebRtcConnections__0__Port=3478
+App__WebRtcConnections__0__Port=5348
 App__WebRtcConnections__0__Turn=True
 App__WebRtcConnections__0__Stun=True
 App__WebRtcConnections__0__UserName=testgram
