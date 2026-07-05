@@ -75,14 +75,31 @@ step() {
   hr
 }
 
+sanitize_ip_input() {
+  local s="$1"
+  s="$(trim_line "$s")"
+  s="${s//[^0-9.]/}"
+  printf '%s' "$s"
+}
+
 is_ipv4() {
   local ip="$1"
-  [[ "$ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || return 1
-  local o x
-  IFS='.' read -r -a o <<< "$ip"
-  for x in "${o[@]}"; do
-    [[ "$x" -le 255 ]] || return 1
+  local a b c d extra o
+  local re='^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+
+  ip="$(sanitize_ip_input "$ip")"
+  [[ -n "$ip" ]] || return 1
+  [[ "$ip" =~ $re ]] || return 1
+
+  IFS='.' read -r a b c d extra <<< "${ip}."
+  [[ -n "$a" && -n "$b" && -n "$c" && -n "$d" && -z "$extra" ]] || return 1
+
+  for o in "$a" "$b" "$c" "$d"; do
+    if (( 10#o < 0 || 10#o > 255 )); then
+      return 1
+    fi
   done
+  return 0
 }
 
 is_domain() {
@@ -90,7 +107,13 @@ is_domain() {
 }
 
 is_port() {
-  [[ "$1" =~ ^[0-9]+$ ]] && (( "$1" >= 1 && "$1" <= 65535 ))
+  local p="$1"
+  local re='^[0-9]+$'
+  [[ "$p" =~ $re ]] || return 1
+  if (( p < 1 || p > 65535 )); then
+    return 1
+  fi
+  return 0
 }
 
 is_yes() {
@@ -139,10 +162,11 @@ read_line() {
   local __var="$1"
   local __line=""
   if interactive_tty; then
-    if ! IFS= read -r __line < /dev/tty; then
+    # -e enables readline; read from /dev/tty (not stdin) so prompts stay in sync
+    if ! IFS= read -r -e __line < /dev/tty; then
       die "Could not read input from /dev/tty. Try: ssh -t root@host"
     fi
-  elif ! IFS= read -r __line; then
+  elif ! IFS= read -r -e __line; then
     die "Could not read input. Use an SSH session with a TTY (ssh -t root@host)."
   fi
   __line="$(trim_line "$__line")"
@@ -176,9 +200,15 @@ prompt() {
       warn "This field is required."
       continue
     fi
-    if [[ -n "$validate" ]] && ! "$validate" "$input"; then
-      warn "Invalid value — try again."
-      continue
+    if [[ -n "$validate" ]]; then
+      if ! "$validate" "$input"; then
+        if [[ "$validate" == "is_ipv4" ]]; then
+          warn "Invalid IPv4 — use four decimal octets, e.g. 203.0.113.50"
+        else
+          warn "Invalid value — try again."
+        fi
+        continue
+      fi
     fi
     printf -v "$var_name" '%s' "$input"
     break
