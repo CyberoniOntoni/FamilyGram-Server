@@ -95,7 +95,8 @@ is_ipv4() {
   [[ -n "$a" && -n "$b" && -n "$c" && -n "$d" && -z "$extra" ]] || return 1
 
   for o in "$a" "$b" "$c" "$d"; do
-    if (( 10#o < 0 || 10#o > 255 )); then
+    [[ "$o" =~ ^[0-9]{1,3}$ ]] || return 1
+    if (( o > 255 )); then
       return 1
     fi
   done
@@ -131,11 +132,11 @@ setup_interactive_stdin() {
   if [[ "${NON_INTERACTIVE}" == true ]]; then
     return 0
   fi
-  if [[ -t 0 ]]; then
+  if [[ -r /dev/tty ]] && [[ -w /dev/tty ]]; then
+    exec 0</dev/tty
     return 0
   fi
-  if [[ -r /dev/tty ]]; then
-    exec </dev/tty
+  if [[ -t 0 ]]; then
     return 0
   fi
   die "No interactive terminal.
@@ -158,15 +159,16 @@ trim_line() {
   printf '%s' "$s"
 }
 
-read_line() {
+read_with_prompt() {
   local __var="$1"
+  local __prompt="$2"
   local __line=""
+  # -p prints prompt; -e enables line editing; read from controlling tty
   if interactive_tty; then
-    # -e enables readline; read from /dev/tty (not stdin) so prompts stay in sync
-    if ! IFS= read -r -e __line < /dev/tty; then
+    if ! IFS= read -r -e -p "$__prompt" __line < /dev/tty; then
       die "Could not read input from /dev/tty. Try: ssh -t root@host"
     fi
-  elif ! IFS= read -r -e __line; then
+  elif ! IFS= read -r -e -p "$__prompt" __line; then
     die "Could not read input. Use an SSH session with a TTY (ssh -t root@host)."
   fi
   __line="$(trim_line "$__line")"
@@ -193,8 +195,7 @@ prompt() {
   fi
 
   while true; do
-    ui_printf '  %s%s: ' "$prompt_text" "$display_default"
-    read_line input
+    read_with_prompt input "  ${prompt_text}${display_default}: "
     input="${input:-$default}"
     if [[ -z "$input" ]]; then
       warn "This field is required."
@@ -227,8 +228,7 @@ prompt_yes_no() {
   [[ "$default" == "no" ]] && hint="y/N"
 
   while true; do
-    ui_printf '  %s %s(%s): ' "$prompt_text" "${C_DIM}" "$hint"
-    read_line input
+    read_with_prompt input "  ${prompt_text} ${C_DIM}(${hint})${C_RESET}: "
     input="${input:-$default}"
     case "${input,,}" in
       y|yes)  printf -v "$var_name" '%s' "yes"; break ;;
@@ -244,8 +244,7 @@ confirm() {
     return 0
   fi
   local input=""
-  ui_printf '  %s (Y/n): ' "$prompt_text"
-  read_line input
+  read_with_prompt input "  ${prompt_text} (Y/n): "
   input="${input:-$default}"
   [[ "${input,,}" == "y" || "${input,,}" == "yes" ]]
 }
@@ -541,8 +540,7 @@ prompt_bot_token() {
     return 0
   fi
   while true; do
-    ui_printf '  Bot token from @BotFather: '
-    read_line BOT_TOKEN
+    read_with_prompt BOT_TOKEN "  Bot token from @BotFather: "
     if [[ "$BOT_TOKEN" =~ ^[0-9]+:[A-Za-z0-9_-]+$ ]]; then
       break
     fi
