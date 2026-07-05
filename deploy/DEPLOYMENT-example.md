@@ -384,12 +384,12 @@ Fork clients must point at your server IP at **build time**.
 | Platform | Repository |
 |----------|------------|
 | Android | https://github.com/glebxdlolreal/testgram-android |
-| Desktop | https://github.com/glebxdlolreal/testgram-tdesktop |
+| Desktop | https://github.com/CyberoniOntoni/testgram-tdesktop (`dev` — AcmeChat IP pre-patched) |
 
-1. Clone the client repo.
-2. Search all files for `YOUR_SERVER_IP` (or the upstream default IP).
-3. Replace with **`203.0.113.50`** (public IP, not domain).
-4. Build and install the APK / desktop binary.
+1. Clone the client repo (`dev` branch).
+2. **Desktop:** see [testgram-tdesktop/docs/BUILD-testgram.md](https://github.com/CyberoniOntoni/testgram-tdesktop/blob/dev/docs/BUILD-testgram.md) — verify `mtproto_dc_options.cpp` has `203.0.113.50` and ports `20443`/`20543`/`20643`.
+3. **Android:** search for `YOUR_SERVER_IP` and replace with **`203.0.113.50`** (public IP, not domain).
+4. Build and install the APK / desktop binary (Windows: Visual Studio + `prepare\win.bat` + `configure.bat x64` with your `api_id`/`api_hash` from [my.telegram.org](https://my.telegram.org/apps)).
 
 Official MyTelegram iOS/Web clients from `loyldg` may need separate RSA key / DC configuration — Android and TDesktop forks above are the documented path.
 

@@ -358,7 +358,7 @@ export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"
 | Platform | Repository |
 |----------|------------|
 | Android | https://github.com/glebxdlolreal/testgram-android |
-| Desktop (TDesktop) | https://github.com/glebxdlolreal/testgram-tdesktop |
+| Desktop (TDesktop) | https://github.com/CyberoniOntoni/testgram-tdesktop (`dev` — see [docs/BUILD-testgram.md](https://github.com/CyberoniOntoni/testgram-tdesktop/blob/dev/docs/BUILD-testgram.md)) |
 | iOS | https://github.com/loyldg/mytelegram-iOS |
 | WebK | https://github.com/loyldg/mytelegram-webk |
 | WebA | https://github.com/loyldg/mytelegram-weba |
