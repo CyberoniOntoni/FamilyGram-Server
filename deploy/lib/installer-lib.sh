@@ -2,27 +2,52 @@
 # Sourced by deploy/install.sh — do not execute directly.
 
 installer_lib_init() {
-  if [[ -t 1 ]]; then
-    C_RESET='\033[0m'
-    C_BOLD='\033[1m'
-    C_DIM='\033[2m'
-    C_GREEN='\033[32m'
-    C_YELLOW='\033[33m'
-    C_CYAN='\033[36m'
-    C_RED='\033[31m'
+  if [[ -t 1 ]] || [[ -w /dev/tty ]]; then
+    C_RESET=$'\033[0m'
+    C_BOLD=$'\033[1m'
+    C_DIM=$'\033[2m'
+    C_GREEN=$'\033[32m'
+    C_YELLOW=$'\033[33m'
+    C_CYAN=$'\033[36m'
+    C_RED=$'\033[31m'
   else
     C_RESET='' C_BOLD='' C_DIM='' C_GREEN='' C_YELLOW='' C_CYAN='' C_RED=''
   fi
 }
 
-hr()  { printf '%s\n' "────────────────────────────────────────────────────────────"; }
-log() { printf '%s==>%s %s\n' "${C_GREEN}" "${C_RESET}" "$*"; }
-warn() { printf '%s!!%s %s\n' "${C_YELLOW}" "${C_RESET}" "$*" >&2; }
-die()  { printf '%sERROR:%s %s\n' "${C_RED}" "${C_RESET}" "$*" >&2; exit 1; }
+interactive_tty() {
+  [[ "${NON_INTERACTIVE}" != true ]] && [[ -r /dev/tty ]] && [[ -w /dev/tty ]]
+}
+
+ui_printf() {
+  if interactive_tty; then
+    # shellcheck disable=SC2059
+    printf "$@" > /dev/tty
+  else
+    # shellcheck disable=SC2059
+    printf "$@"
+  fi
+}
+
+ui_warn() {
+  if interactive_tty; then
+    # shellcheck disable=SC2059
+    printf "$@" > /dev/tty
+  else
+    # shellcheck disable=SC2059
+    printf "$@" >&2
+  fi
+}
+
+hr()  { ui_printf '%s\n' "────────────────────────────────────────────────────────────"; }
+log() { ui_printf '%s==>%s %s\n' "${C_GREEN}" "${C_RESET}" "$*"; }
+warn() { ui_warn '%s!!%s %s\n' "${C_YELLOW}" "${C_RESET}" "$*"; }
+die()  { ui_warn '%sERROR:%s %s\n' "${C_RED}" "${C_RESET}" "$*"; exit 1; }
 
 banner() {
-  printf '\n%s%s' "${C_CYAN}${C_BOLD}"
-  cat <<'EOF'
+  ui_printf '\n%s' "${C_CYAN}${C_BOLD}"
+  if interactive_tty; then
+    cat <<'EOF' > /dev/tty
 ████████╗███████╗███████╗████████╗ ██████╗ ██████╗  █████╗ ███╗   ███╗
 ╚══██╔══╝██╔════╝██╔════╝╚══██╔══╝██╔════╝ ██╔══██╗██╔══██╗████╗ ████║
    ██║   █████╗  ███████╗   ██║   ██║  ███╗██████╔╝███████║██╔████╔██║
@@ -30,13 +55,23 @@ banner() {
    ██║   ███████╗███████║   ██║   ╚██████╔╝██║  ██║██║  ██║██║ ╚═╝ ██║
    ╚═╝   ╚══════╝╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝
 EOF
-  printf '%s\n' "${C_RESET}"
-  printf '  %sDocker interactive installer%s\n' "${C_BOLD}" "${C_RESET}"
-  printf '  %sSelf-hosted Telegram-compatible server via Docker Compose%s\n\n' "${C_DIM}" "${C_RESET}"
+  else
+    cat <<'EOF'
+████████╗███████╗███████╗████████╗ ██████╗ ██████╗  █████╗ ███╗   ███╗
+╚══██╔══╝██╔════╝██╔════╝╚══██╔══╝██╔════╝ ██╔══██╗██╔══██╗████╗ ████║
+   ██║   █████╗  ███████╗   ██║   ██║  ███╗██████╔╝███████║██╔████╔██║
+   ██║   ██╔══╝  ╚════██║   ██║   ██║   ██║██╔══██╗██╔══██║██║╚██╔╝██║
+   ██║   ███████╗███████║   ██║   ╚██████╔╝██║  ██║██║  ██║██║ ╚═╝ ██║
+   ╚═╝   ╚══════╝╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝
+EOF
+  fi
+  ui_printf '%s\n' "${C_RESET}"
+  ui_printf '  %sDocker interactive installer%s\n' "${C_BOLD}" "${C_RESET}"
+  ui_printf '  %sSelf-hosted Telegram-compatible server via Docker Compose%s\n\n' "${C_DIM}" "${C_RESET}"
 }
 
 step() {
-  printf '\n%s%s Step %d/%d — %s%s\n' "${C_CYAN}${C_BOLD}" "${C_RESET}" "$1" "$2" "$3" "${C_RESET}"
+  ui_printf '\n%s Step %d/%d — %s%s\n' "${C_CYAN}${C_BOLD}" "$1" "$2" "$3" "${C_RESET}"
   hr
 }
 
@@ -92,13 +127,25 @@ Or pass all values explicitly:
   PUBLIC_IP=... LAN_IP=... BOT_TOKEN=... bash install.sh --non-interactive"
 }
 
+trim_line() {
+  local s="$1"
+  s="${s//$'\r'/}"
+  s="${s#"${s%%[![:space:]]*}"}"
+  s="${s%"${s##*[![:space:]]}"}"
+  printf '%s' "$s"
+}
+
 read_line() {
   local __var="$1"
   local __line=""
-  if ! IFS= read -r __line; then
+  if interactive_tty; then
+    if ! IFS= read -r __line < /dev/tty; then
+      die "Could not read input from /dev/tty. Try: ssh -t root@host"
+    fi
+  elif ! IFS= read -r __line; then
     die "Could not read input. Use an SSH session with a TTY (ssh -t root@host)."
   fi
-  __line="${__line//$'\r'/}"
+  __line="$(trim_line "$__line")"
   printf -v "$__var" '%s' "$__line"
 }
 
@@ -122,7 +169,7 @@ prompt() {
   fi
 
   while true; do
-    printf '  %s%s: ' "$prompt_text" "$display_default" >&2
+    ui_printf '  %s%s: ' "$prompt_text" "$display_default"
     read_line input
     input="${input:-$default}"
     if [[ -z "$input" ]]; then
@@ -150,7 +197,7 @@ prompt_yes_no() {
   [[ "$default" == "no" ]] && hint="y/N"
 
   while true; do
-    printf '  %s %s(%s): ' "$prompt_text" "${C_DIM}" "$hint" >&2
+    ui_printf '  %s %s(%s): ' "$prompt_text" "${C_DIM}" "$hint"
     read_line input
     input="${input:-$default}"
     case "${input,,}" in
@@ -167,7 +214,7 @@ confirm() {
     return 0
   fi
   local input=""
-  printf '  %s (Y/n): ' "$prompt_text" >&2
+  ui_printf '  %s (Y/n): ' "$prompt_text"
   read_line input
   input="${input:-$default}"
   [[ "${input,,}" == "y" || "${input,,}" == "yes" ]]
@@ -193,13 +240,19 @@ maybe_self_update() {
   [[ -d "${LOCAL_REPO_ROOT}/.git" ]] || return 0
   [[ "${INSTALLER_SELF_UPDATED:-}" == "1" ]] && return 0
 
-  log "Updating installer from git (${REPO_BRANCH})..."
+  local hash_before hash_after
+  hash_before="$(sha256sum "${repo_script}" 2>/dev/null | awk '{print $1}')" || return 0
+
   git -C "${LOCAL_REPO_ROOT}" fetch origin "${REPO_BRANCH}" 2>/dev/null || true
   git -C "${LOCAL_REPO_ROOT}" checkout "${REPO_BRANCH}" 2>/dev/null || true
   git -C "${LOCAL_REPO_ROOT}" pull --ff-only origin "${REPO_BRANCH}" 2>/dev/null || true
 
-  export INSTALLER_SELF_UPDATED=1
-  exec bash "${repo_script}" "$@"
+  hash_after="$(sha256sum "${repo_script}" 2>/dev/null | awk '{print $1}')" || return 0
+  if [[ "${hash_before}" != "${hash_after}" ]]; then
+    log "Installer updated from git — restarting..."
+    export INSTALLER_SELF_UPDATED=1
+    exec bash "${repo_script}" "$@"
+  fi
 }
 
 install_system_deps() {
@@ -378,58 +431,58 @@ configure_firewall() {
 }
 
 print_port_forwards() {
-  printf '\n%s%sRouter / firewall — open these ports%s\n' "${C_BOLD}" "${C_CYAN}" "${C_RESET}"
-  printf '%s\n' "Forward WAN → ${LAN_IP} on your router (or allow on cloud firewall):"
+  ui_printf '\n%sRouter / firewall — open these ports%s\n' "${C_CYAN}${C_BOLD}" "${C_RESET}"
+  ui_printf '%s\n' "Forward WAN → ${LAN_IP} on your router (or allow on cloud firewall):"
   hr
-  printf '  %-14s %-10s %-38s %s\n' "PORT" "PROTO" "SERVICE" "REQUIRED"
+  ui_printf '  %-14s %-10s %-38s %s\n' "PORT" "PROTO" "SERVICE" "REQUIRED"
   hr
-  printf '  %-14s %-10s %-38s %s\n' "$PORT_MT1" "TCP" "MTProto DC1 (main client entry)" "yes"
-  printf '  %-14s %-10s %-38s %s\n' "$PORT_MT2" "TCP" "MTProto DC2" "yes"
-  printf '  %-14s %-10s %-38s %s\n' "$PORT_MT3" "TCP" "MTProto DC3" "yes"
-  printf '  %-14s %-10s %-38s %s\n' "$PORT_MT4" "TCP" "MTProto DC4 (media)" "yes"
-  printf '  %-14s %-10s %-38s %s\n' "$PORT_STUN" "TCP+UDP" "STUN/TURN (voice/video)" "yes"
-  printf '  %-14s %-10s %-38s %s\n' "${PORT_RELAY_MIN}-${PORT_RELAY_MAX}" "UDP" "TURN relay media" "yes"
+  ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_MT1" "TCP" "MTProto DC1 (main client entry)" "yes"
+  ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_MT2" "TCP" "MTProto DC2" "yes"
+  ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_MT3" "TCP" "MTProto DC3" "yes"
+  ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_MT4" "TCP" "MTProto DC4 (media)" "yes"
+  ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_STUN" "TCP+UDP" "STUN/TURN (voice/video)" "yes"
+  ui_printf '  %-14s %-10s %-38s %s\n' "${PORT_RELAY_MIN}-${PORT_RELAY_MAX}" "UDP" "TURN relay media" "yes"
   if [[ "${ENABLE_PASSKEY}" == "yes" ]]; then
-    printf '  %-14s %-10s %-38s %s\n' "$PORT_HTTPS" "TCP" "HTTPS (passkey / web)" "yes"
+    ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_HTTPS" "TCP" "HTTPS (passkey / web)" "yes"
   else
-    printf '  %-14s %-10s %-38s %s\n' "$PORT_HTTPS" "TCP" "HTTPS (passkey / web)" "optional"
+    ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_HTTPS" "TCP" "HTTPS (passkey / web)" "optional"
   fi
   if [[ "${ENABLE_RTMP}" == "yes" ]]; then
-    printf '  %-14s %-10s %-38s %s\n' "$PORT_RTMP" "TCP" "RTMP live streaming" "optional"
-    printf '  %-14s %-10s %-38s %s\n' "$PORT_RTMP_HLS" "TCP" "RTMP HLS playback" "optional"
+    ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_RTMP" "TCP" "RTMP live streaming" "optional"
+    ui_printf '  %-14s %-10s %-38s %s\n' "$PORT_RTMP_HLS" "TCP" "RTMP HLS playback" "optional"
   fi
   hr
-  printf '\n%sClient build IP:%s %s\n' "${C_BOLD}" "${C_RESET}" "${PUBLIC_IP}"
-  printf '%sNever put the LAN IP (%s) in DcOptions — remote clients cannot reach it.%s\n' \
+  ui_printf '\n%sClient build IP:%s %s\n' "${C_BOLD}" "${C_RESET}" "${PUBLIC_IP}"
+  ui_printf '%sNever put the LAN IP (%s) in DcOptions — remote clients cannot reach it.%s\n' \
     "${C_YELLOW}" "${LAN_IP}" "${C_RESET}"
   if [[ "${ENABLE_PASSKEY}" == "yes" ]]; then
-    printf '\n%sPasskey setup:%s\n' "${C_BOLD}" "${C_RESET}"
-    printf '%s\n' \
+    ui_printf '\n%sPasskey setup:%s\n' "${C_BOLD}" "${C_RESET}"
+    ui_printf '%s\n' \
       "  • DNS A: ${PASSKEY_DOMAIN} → ${PUBLIC_IP} (grey cloud / DNS only)" \
       "  • Proxy ${PASSKEY_DOMAIN}:443 → ${LAN_IP}:${PORT_HTTPS}"
   fi
-  printf '\n%sGHCR:%s github.com/CyberoniOntoni/testgram/packages must be public, or run docker login ghcr.io\n' \
+  ui_printf '\n%sGHCR:%s github.com/CyberoniOntoni/testgram/packages must be public, or run docker login ghcr.io\n' \
     "${C_BOLD}" "${C_RESET}"
 }
 
 print_config_review() {
   hr
-  printf '  %-22s %s\n' "Install directory:" "${INSTALL_DIR}"
-  printf '  %-22s %s\n' "Compose directory:" "${COMPOSE_DIR}"
-  printf '  %-22s %s\n' "Git branch:" "${REPO_BRANCH}"
-  printf '  %-22s %s\n' "Public WAN IP:" "${PUBLIC_IP}"
-  printf '  %-22s %s\n' "LAN / host IP:" "${LAN_IP}"
-  printf '  %-22s %s\n' "Brand:" "${BRAND}"
-  printf '  %-22s %s\n' "Passkey:" "${ENABLE_PASSKEY} (${PASSKEY_DOMAIN})"
-  printf '  %-22s %s\n' "MTProto:" "${PORT_MT1}, ${PORT_MT2}, ${PORT_MT3}, ${PORT_MT4}"
-  printf '  %-22s %s\n' "HTTPS:" "${PORT_HTTPS}"
-  printf '  %-22s %s\n' "STUN/TURN:" "${PORT_STUN} tcp+udp, relay ${PORT_RELAY_MIN}-${PORT_RELAY_MAX} udp"
+  ui_printf '  %-22s %s\n' "Install directory:" "${INSTALL_DIR}"
+  ui_printf '  %-22s %s\n' "Compose directory:" "${COMPOSE_DIR}"
+  ui_printf '  %-22s %s\n' "Git branch:" "${REPO_BRANCH}"
+  ui_printf '  %-22s %s\n' "Public WAN IP:" "${PUBLIC_IP}"
+  ui_printf '  %-22s %s\n' "LAN / host IP:" "${LAN_IP}"
+  ui_printf '  %-22s %s\n' "Brand:" "${BRAND}"
+  ui_printf '  %-22s %s\n' "Passkey:" "${ENABLE_PASSKEY} (${PASSKEY_DOMAIN})"
+  ui_printf '  %-22s %s\n' "MTProto:" "${PORT_MT1}, ${PORT_MT2}, ${PORT_MT3}, ${PORT_MT4}"
+  ui_printf '  %-22s %s\n' "HTTPS:" "${PORT_HTTPS}"
+  ui_printf '  %-22s %s\n' "STUN/TURN:" "${PORT_STUN} tcp+udp, relay ${PORT_RELAY_MIN}-${PORT_RELAY_MAX} udp"
   if [[ "${ENABLE_RTMP}" == "yes" ]]; then
-    printf '  %-22s %s\n' "RTMP:" "${PORT_RTMP} / HLS ${PORT_RTMP_HLS}"
+    ui_printf '  %-22s %s\n' "RTMP:" "${PORT_RTMP} / HLS ${PORT_RTMP_HLS}"
   fi
-  printf '  %-22s %s\n' "Install Docker:" "${INSTALL_DOCKER}"
-  printf '  %-22s %s\n' "Configure UFW:" "${DO_FIREWALL}"
-  printf '  %-22s %s\n' "Bot token:" "${BOT_TOKEN:0:12}..."
+  ui_printf '  %-22s %s\n' "Install Docker:" "${INSTALL_DOCKER}"
+  ui_printf '  %-22s %s\n' "Configure UFW:" "${DO_FIREWALL}"
+  ui_printf '  %-22s %s\n' "Bot token:" "${BOT_TOKEN:0:12}..."
   hr
 }
 
@@ -458,7 +511,7 @@ prompt_bot_token() {
     return 0
   fi
   while true; do
-    printf '  Bot token from @BotFather: ' >&2
+    ui_printf '  Bot token from @BotFather: '
     read_line BOT_TOKEN
     if [[ "$BOT_TOKEN" =~ ^[0-9]+:[A-Za-z0-9_-]+$ ]]; then
       break
@@ -471,16 +524,16 @@ run_install_wizard() {
   local total_steps=7
 
   banner
-  printf '  %sInstaller v%s%s\n\n' "${C_DIM}" "${INSTALLER_VERSION}" "${C_RESET}"
+  ui_printf '  %sInstaller v%s%s\n\n' "${C_DIM}" "${INSTALLER_VERSION}" "${C_RESET}"
 
   step 1 "$total_steps" "Before you start"
-  printf '%s\n' \
+  ui_printf '%s\n' \
     "You will need:" \
     "  • Public WAN IP (what clients connect to)" \
     "  • LAN IP of this machine (for router port forwards)" \
     "  • @BotFather bot token (login verification codes)" \
     ""
-  printf '%sRules:%s MTProto must go direct to your IP — not through Cloudflare proxy or NPM.\n\n' \
+  ui_printf '%sRules:%s MTProto must go direct to your IP — not through Cloudflare proxy or NPM.\n\n' \
     "${C_YELLOW}" "${C_RESET}"
 
   check_lxc_prereqs
@@ -492,7 +545,7 @@ run_install_wizard() {
   fi
 
   if ! confirm "Start the interactive installer?"; then
-    printf '\nAborted.\n'
+    ui_printf '\nAborted.\n'
     exit 0
   fi
 
@@ -502,7 +555,7 @@ run_install_wizard() {
   COMPOSE_FILE="${COMPOSE_DIR}/docker-compose.yml"
 
   step 3 "$total_steps" "Network & branding"
-  printf '%s\n' "Public IP goes into client configs. LAN IP is only for port-forward targets." ""
+  ui_printf '%s\n' "Public IP goes into client configs. LAN IP is only for port-forward targets." ""
   local detected_lan
   detected_lan="$(detect_lan_ip)"
   prompt PUBLIC_IP "Public WAN IP" "" is_ipv4
@@ -557,7 +610,7 @@ run_install_wizard() {
   step 6 "$total_steps" "Review"
   print_config_review
   if ! confirm "Apply configuration and install?"; then
-    printf '\nAborted. No changes made.\n'
+    ui_printf '\nAborted. No changes made.\n'
     exit 0
   fi
 
@@ -582,19 +635,19 @@ run_install_apply() {
     start_stack
     docker compose ps
   elif [[ "${NON_INTERACTIVE}" != true ]]; then
-    printf '\n'
+    ui_printf '\n'
     if confirm "Start docker compose now?"; then
       start_stack
       docker compose ps
     else
       log "Stack not started. When ready:"
-      printf '    cd %s && docker compose up -d\n' "${COMPOSE_DIR}"
+      ui_printf '    cd %s && docker compose up -d\n' "${COMPOSE_DIR}"
     fi
   fi
 
-  printf '\n%s%sDone — Testgram Docker stack is ready%s\n\n' "${C_GREEN}${C_BOLD}" "" "${C_RESET}"
-  printf '  .env:      %s/.env\n' "${COMPOSE_DIR}"
-  printf '  Summary:   %s\n' "${SUMMARY_FILE}"
-  printf '  Logs:      cd %s && docker compose logs -f\n' "${COMPOSE_DIR}"
-  printf '  Next:      port-forward table above, link phone in @BotFather bot, build clients with IP %s\n\n' "${PUBLIC_IP}"
+  ui_printf '\n%sDone — Testgram Docker stack is ready%s\n\n' "${C_GREEN}${C_BOLD}" "${C_RESET}"
+  ui_printf '  .env:      %s/.env\n' "${COMPOSE_DIR}"
+  ui_printf '  Summary:   %s\n' "${SUMMARY_FILE}"
+  ui_printf '  Logs:      cd %s && docker compose logs -f\n' "${COMPOSE_DIR}"
+  ui_printf '  Next:      port-forward table above, link phone in @BotFather bot, build clients with IP %s\n\n' "${PUBLIC_IP}"
 }
