@@ -151,7 +151,78 @@ is_yes() {
 }
 
 detect_lan_ip() {
-  ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1;i<=NF;i++) if ($i=="src") {print $(i+1); exit}}' || true
+  local ip=""
+  ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1;i<=NF;i++) if ($i=="src") {print $(i+1); exit}}')"
+  ip="$(trim_line "$ip")"
+  if is_ipv4 "$ip"; then
+    printf '%s' "$ip"
+    return 0
+  fi
+  ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
+  ip="$(trim_line "$ip")"
+  if is_ipv4 "$ip"; then
+    printf '%s' "$ip"
+    return 0
+  fi
+  ip="$(ip -4 -o addr show scope global up 2>/dev/null | awk '{print $4}' | head -n1 | cut -d/ -f1)"
+  ip="$(trim_line "$ip")"
+  if is_ipv4 "$ip"; then
+    printf '%s' "$ip"
+    return 0
+  fi
+  return 1
+}
+
+fetch_url() {
+  local url="$1"
+  if command -v curl >/dev/null 2>&1; then
+    curl -4 -fsSL --max-time 8 "$url" 2>/dev/null | head -n1
+    return 0
+  fi
+  if command -v wget >/dev/null 2>&1; then
+    wget -qO- --timeout=8 "$url" 2>/dev/null | head -n1
+    return 0
+  fi
+  return 1
+}
+
+detect_public_ip() {
+  local ip="" url
+  local urls=(
+    "https://api4.ipify.org"
+    "https://ifconfig.me/ip"
+    "https://icanhazip.com"
+    "https://checkip.amazonaws.com"
+  )
+  for url in "${urls[@]}"; do
+    ip="$(fetch_url "$url" || true)"
+    ip="$(trim_line "$ip")"
+    ip="$(sanitize_ip_input "$ip")"
+    if is_ipv4 "$ip"; then
+      printf '%s' "$ip"
+      return 0
+    fi
+  done
+  return 1
+}
+
+show_detected_ips() {
+  local detected_lan="$1"
+  local detected_public="$2"
+
+  ui_printf '%s\n' "Auto-detected addresses (suggestions only — you must type your values):"
+  if [[ -n "$detected_public" ]]; then
+    ui_printf '  %sPublic WAN IP:%s %s\n' "${C_DIM}" "${C_RESET}" "${detected_public}"
+  else
+    ui_printf '  %sPublic WAN IP:%s not detected (check your router or https://ifconfig.me)\n' "${C_DIM}" "${C_RESET}"
+  fi
+  if [[ -n "$detected_lan" ]]; then
+    ui_printf '  %sLAN / host IP:%s %s\n' "${C_DIM}" "${C_RESET}" "${detected_lan}"
+  else
+    ui_printf '  %sLAN / host IP:%s not detected (run: ip -4 route get 1.1.1.1)\n' "${C_DIM}" "${C_RESET}"
+  fi
+  ui_printf '%s\n' "Press Enter on an empty field will NOT use these — type each IP yourself."
+  ui_printf '\n'
 }
 
 setup_interactive_stdin() {
@@ -620,11 +691,16 @@ run_install_wizard() {
   COMPOSE_FILE="${COMPOSE_DIR}/docker-compose.yml"
 
   step 3 "$total_steps" "Network & branding"
-  ui_printf '%s\n' "Public IP goes into client configs. LAN IP is only for port-forward targets." ""
-  local detected_lan
-  detected_lan="$(detect_lan_ip)"
+  ui_printf '%s\n' \
+    "Public IP goes into client configs. LAN IP is only for port-forward targets." \
+    ""
+  local detected_lan="" detected_public=""
+  log "Detecting network addresses..."
+  detected_lan="$(detect_lan_ip 2>/dev/null || true)"
+  detected_public="$(detect_public_ip 2>/dev/null || true)"
+  show_detected_ips "$detected_lan" "$detected_public"
   prompt PUBLIC_IP "Public WAN IP" "" is_ipv4
-  prompt LAN_IP "LAN IP of this host" "${detected_lan:-}" is_ipv4
+  prompt LAN_IP "LAN IP of this host" "" is_ipv4
   prompt BRAND "Brand / app name" "Testgram"
   prompt_yes_no ENABLE_PASSKEY "Enable passkey (WebAuthn)? Needs HTTPS + domain" "no"
   if [[ "${ENABLE_PASSKEY}" == "yes" ]]; then

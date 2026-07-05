@@ -23,7 +23,7 @@
 #   --help               show help
 set -euo pipefail
 
-INSTALLER_VERSION="3.0.8"
+INSTALLER_VERSION="3.1.0"
 
 REPO_URL="${REPO_URL:-https://github.com/CyberoniOntoni/testgram.git}"
 REPO_BRANCH="${REPO_BRANCH:-dev}"
@@ -148,8 +148,14 @@ if [[ "${NON_INTERACTIVE}" == true ]]; then
   INSTALL_DOCKER="${INSTALL_DOCKER:-yes}"
   [[ -n "${INSTALL_DOCKER}" ]] || INSTALL_DOCKER=yes
   [[ -n "${PUBLIC_IP}" ]] || die "PUBLIC_IP required in non-interactive mode"
-  [[ -n "${LAN_IP}" ]] || LAN_IP="$(detect_lan_ip)"
+  if [[ -z "${LAN_IP}" ]]; then
+    LAN_IP="$(detect_lan_ip 2>/dev/null || true)"
+  fi
+  if [[ -z "${PUBLIC_IP}" ]]; then
+    PUBLIC_IP="$(detect_public_ip 2>/dev/null || true)"
+  fi
   [[ -n "${LAN_IP}" ]] || die "LAN_IP required in non-interactive mode"
+  [[ -n "${PUBLIC_IP}" ]] || die "PUBLIC_IP required in non-interactive mode"
   [[ -n "${BRAND}" ]] || BRAND="Testgram"
   [[ -n "${BOT_TOKEN}" ]] || die "BOT_TOKEN required in non-interactive mode"
   if [[ "${ENABLE_PASSKEY}" == "yes" ]]; then
