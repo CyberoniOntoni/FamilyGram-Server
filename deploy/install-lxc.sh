@@ -15,7 +15,11 @@
 #   --help               Show help
 #
 # LXC (Proxmox): pct set <CTID> -features nesting=1,keyctl=1
+#
+# IMPORTANT: save the script first, then run it. Do NOT use: curl ... | bash
 set -euo pipefail
+
+INSTALLER_VERSION="2.1.0"
 
 REPO_URL="${REPO_URL:-https://github.com/CyberoniOntoni/testgram.git}"
 REPO_BRANCH="${REPO_BRANCH:-dev}"
@@ -122,6 +126,55 @@ detect_lan_ip() {
   ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i=1;i<=NF;i++) if ($i=="src") {print $(i+1); exit}}' || true
 }
 
+# Read from the real terminal — required when stdin is a pipe or redirected.
+setup_interactive_stdin() {
+  if [[ "${NON_INTERACTIVE}" == true ]]; then
+    return 0
+  fi
+  if [[ -t 0 ]]; then
+    return 0
+  fi
+  if [[ -r /dev/tty ]]; then
+    exec </dev/tty
+    return 0
+  fi
+  die "No interactive terminal.
+
+Do NOT pipe this script (curl ... | bash) — that steals stdin and skips prompts.
+
+Instead:
+  curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/install-lxc.sh -o install-lxc.sh
+  bash install-lxc.sh
+
+Or pass all values explicitly:
+  PUBLIC_IP=... LAN_IP=... BOT_TOKEN=... bash install-lxc.sh --non-interactive"
+}
+
+read_line() {
+  local __var="$1"
+  local __line=""
+  if ! IFS= read -r __line; then
+    die "Could not read input. Use an SSH session with a TTY (ssh -t root@host)."
+  fi
+  __line="${__line//$'\r'/}"
+  printf -v "$__var" '%s' "$__line"
+}
+
+maybe_self_update() {
+  local repo_script="${LOCAL_REPO_ROOT}/deploy/install-lxc.sh"
+  [[ -f "${repo_script}" ]] || return 0
+  [[ -d "${LOCAL_REPO_ROOT}/.git" ]] || return 0
+  [[ "${INSTALLER_SELF_UPDATED:-}" == "1" ]] && return 0
+
+  log "Updating installer from git (${REPO_BRANCH})..."
+  git -C "${LOCAL_REPO_ROOT}" fetch origin "${REPO_BRANCH}" 2>/dev/null || true
+  git -C "${LOCAL_REPO_ROOT}" checkout "${REPO_BRANCH}" 2>/dev/null || true
+  git -C "${LOCAL_REPO_ROOT}" pull --ff-only origin "${REPO_BRANCH}" 2>/dev/null || true
+
+  export INSTALLER_SELF_UPDATED=1
+  exec bash "${repo_script}" "$@"
+}
+
 prompt() {
   local var_name="$1" prompt_text="$2" default="${3:-}" validate="${4:-}"
   local input="" display_default=""
@@ -142,8 +195,8 @@ prompt() {
   fi
 
   while true; do
-    printf '  %s%s: ' "$prompt_text" "$display_default"
-    read -r input
+    printf '  %s%s: ' "$prompt_text" "$display_default" >&2
+    read_line input
     input="${input:-$default}"
     if [[ -z "$input" ]]; then
       warn "This field is required."
@@ -170,8 +223,8 @@ prompt_yes_no() {
   [[ "$default" == "no" ]] && hint="y/N"
 
   while true; do
-    printf '  %s %s(%s): ' "$prompt_text" "${C_DIM}" "$hint"
-    read -r input
+    printf '  %s %s(%s): ' "$prompt_text" "${C_DIM}" "$hint" >&2
+    read_line input
     input="${input:-$default}"
     case "${input,,}" in
       y|yes)  printf -v "$var_name" '%s' "yes"; break ;;
@@ -187,8 +240,8 @@ confirm() {
     return 0
   fi
   local input=""
-  printf '  %s (Y/n): ' "$prompt_text"
-  read -r input
+  printf '  %s (Y/n): ' "$prompt_text" >&2
+  read_line input
   input="${input:-$default}"
   [[ "${input,,}" == "y" || "${input,,}" == "yes" ]]
 }
@@ -220,9 +273,13 @@ if [[ -f "${LOCAL_REPO_ROOT}/docker/compose/.env.example" ]]; then
   COMPOSE_FILE="${COMPOSE_DIR}/docker-compose.yml"
 fi
 
+maybe_self_update "$@"
+setup_interactive_stdin
+
 # ── Wizard ────────────────────────────────────────────────────────────────────
 
 banner
+printf '  %sInstaller v%s — interactive mode%s\n\n' "${C_DIM}" "${INSTALLER_VERSION}" "${C_RESET}"
 
 TOTAL_STEPS=6
 
@@ -318,8 +375,8 @@ if [[ -n "${BOT_TOKEN}" ]]; then
   log "BOT_TOKEN provided via environment/flag"
 else
   while true; do
-    printf '  Bot token from @BotFather: '
-    read -r BOT_TOKEN
+    printf '  Bot token from @BotFather: ' >&2
+    read_line BOT_TOKEN
     if [[ "$BOT_TOKEN" =~ ^[0-9]+:[A-Za-z0-9_-]+$ ]]; then
       break
     fi

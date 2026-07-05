@@ -48,8 +48,10 @@ Quick install on Debian LXC/VM:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/install-lxc.sh -o install-lxc.sh
-BOT_TOKEN='your_token' bash install-lxc.sh --start
+bash install-lxc.sh
 ```
+
+Do **not** use `curl ... | bash` — that breaks interactive prompts. Save the file first, then run it.
 
 ### Quick Start with Docker
 
