@@ -15,14 +15,22 @@ installer_lib_init() {
   fi
 }
 
+have_tty() {
+  [[ -r /dev/tty ]] && [[ -w /dev/tty ]]
+}
+
 interactive_tty() {
-  [[ "${NON_INTERACTIVE}" != true ]] && [[ -r /dev/tty ]] && [[ -w /dev/tty ]]
+  [[ "${NON_INTERACTIVE}" != true ]] && have_tty
+}
+
+tty_write() {
+  # shellcheck disable=SC2059
+  printf "$@" > /dev/tty
 }
 
 ui_printf() {
   if interactive_tty; then
-    # shellcheck disable=SC2059
-    printf "$@" > /dev/tty
+    tty_write "$@"
   else
     # shellcheck disable=SC2059
     printf "$@"
@@ -31,8 +39,7 @@ ui_printf() {
 
 ui_warn() {
   if interactive_tty; then
-    # shellcheck disable=SC2059
-    printf "$@" > /dev/tty
+    tty_write "$@"
   else
     # shellcheck disable=SC2059
     printf "$@" >&2
@@ -144,8 +151,9 @@ setup_interactive_stdin() {
   if [[ "${NON_INTERACTIVE}" == true ]]; then
     return 0
   fi
-  if [[ -r /dev/tty ]] && [[ -w /dev/tty ]]; then
-    exec 0</dev/tty
+  if have_tty; then
+    # Attach stdin + stderr to the real terminal (sudo-safe, log redirection-safe)
+    exec 0</dev/tty 2>/dev/tty
     return 0
   fi
   if [[ -t 0 ]]; then
@@ -175,15 +183,20 @@ read_with_prompt() {
   local __var="$1"
   local __prompt="$2"
   local __line=""
-  # -p keeps prompt and input on one line; -e needs readline (fallback without -e)
+
+  # Never use read -p (it prints to stderr, which may not be the visible terminal).
   if interactive_tty; then
-    if ! IFS= read -r -e -p "$__prompt" __line < /dev/tty 2>/dev/null; then
-      if ! IFS= read -r -p "$__prompt" __line < /dev/tty; then
+    tty_write '%s' "$__prompt"
+    if ! IFS= read -r -e __line < /dev/tty 2>/dev/null; then
+      if ! IFS= read -r __line < /dev/tty; then
         die "Could not read input from /dev/tty. Try: ssh -t root@host"
       fi
     fi
-  elif ! IFS= read -r -p "$__prompt" __line; then
-    die "Could not read input. Use an SSH session with a TTY (ssh -t root@host)."
+  else
+    printf '%s' "$__prompt" >&2
+    if ! IFS= read -r __line; then
+      die "Could not read input. Use an SSH session with a TTY (ssh -t root@host)."
+    fi
   fi
   __line="$(trim_line "$__line")"
   printf -v "$__var" '%s' "$__line"
