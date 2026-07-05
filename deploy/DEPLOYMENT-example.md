@@ -176,11 +176,11 @@ Custom-built services are published by GitHub Actions to:
 ```text
 ghcr.io/cyberoniontoni/testgram/mytelegram-messenger-command-server:latest
 ghcr.io/cyberoniontoni/testgram/mytelegram-messenger-query-server:latest
-ghcr.io/cyberoniononti/testgram/mytelegram-gateway-server:latest
-ghcr.io/cyberoniononti/testgram/mytelegram-auth-server:latest
-ghcr.io/cyberoniononti/testgram/mytelegram-sms-sender:latest
-ghcr.io/cyberoniononti/testgram/mytelegram-data-seeder:latest
-ghcr.io/cyberoniononti/testgram/testgram-bot:latest
+ghcr.io/cyberoniontoni/testgram/mytelegram-gateway-server:latest
+ghcr.io/cyberoniontoni/testgram/mytelegram-auth-server:latest
+ghcr.io/cyberoniontoni/testgram/mytelegram-sms-sender:latest
+ghcr.io/cyberoniontoni/testgram/mytelegram-data-seeder:latest
+ghcr.io/cyberoniontoni/testgram/testgram-bot:latest
 ```
 
 Upstream images (not built by the fork):
@@ -192,7 +192,7 @@ mytelegram/mytelegram-file-server:latest
 
 ### Make packages public (one-time)
 
-GitHub → your profile → **Packages** → each `cyberoniononti/testgram/*` package → **Package settings** → **Change visibility** → Public.
+GitHub → your profile → **Packages** → each `cyberoniontoni/testgram/*` package → **Package settings** → **Change visibility** → Public.
 
 Or on the VM, log in:
 
