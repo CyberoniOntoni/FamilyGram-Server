@@ -23,7 +23,7 @@
 #   --help               show help
 set -euo pipefail
 
-INSTALLER_VERSION="3.0.0"
+INSTALLER_VERSION="3.0.1"
 
 REPO_URL="${REPO_URL:-https://github.com/CyberoniOntoni/testgram.git}"
 REPO_BRANCH="${REPO_BRANCH:-dev}"
@@ -63,8 +63,42 @@ SUMMARY_FILE=""
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOCAL_REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+resolve_installer_lib() {
+  local path
+  local candidates=(
+    "${SCRIPT_DIR}/lib/installer-lib.sh"
+    "${LOCAL_REPO_ROOT}/deploy/lib/installer-lib.sh"
+  )
+  for path in "${candidates[@]}"; do
+    if [[ -f "${path}" ]]; then
+      printf '%s\n' "${path}"
+      return 0
+    fi
+  done
+
+  # Standalone curl download (e.g. /root/install.sh) — fetch lib from GitHub
+  local cache_dir="/tmp/testgram-installer-${INSTALLER_VERSION}"
+  local cached="${cache_dir}/installer-lib.sh"
+  local raw_url="https://raw.githubusercontent.com/CyberoniOntoni/testgram/${REPO_BRANCH}/deploy/lib/installer-lib.sh"
+  mkdir -p "${cache_dir}"
+  if [[ ! -f "${cached}" ]]; then
+    if command -v curl >/dev/null 2>&1; then
+      curl -fsSL "${raw_url}" -o "${cached}"
+    elif command -v wget >/dev/null 2>&1; then
+      wget -qO "${cached}" "${raw_url}"
+    else
+      printf 'ERROR: installer-lib.sh not found next to install.sh and curl/wget unavailable\n' >&2
+      printf 'Clone the repo instead: git clone -b %s %s\n' "${REPO_BRANCH}" "${REPO_URL}" >&2
+      return 1
+    fi
+  fi
+  printf '%s\n' "${cached}"
+}
+
+INSTALLER_LIB="$(resolve_installer_lib)" || exit 1
 # shellcheck source=lib/installer-lib.sh
-source "${SCRIPT_DIR}/lib/installer-lib.sh"
+source "${INSTALLER_LIB}"
 
 usage() {
   sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
