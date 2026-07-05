@@ -75,6 +75,14 @@ step() {
   hr
 }
 
+escape_sed_repl() {
+  local s="$1"
+  s="${s//\\/\\\\}"
+  s="${s//&/\\&}"
+  s="${s//|/\\|}"
+  printf '%s' "$s"
+}
+
 sanitize_ip_input() {
   local s="$1"
   s="$(trim_line "$s")"
@@ -104,7 +112,11 @@ is_ipv4() {
 }
 
 is_domain() {
-  [[ "$1" =~ ^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$ ]]
+  local d re
+  d="$(trim_line "$1")"
+  re='^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$'
+  [[ "$d" =~ $re ]] || return 1
+  return 0
 }
 
 is_port() {
@@ -163,12 +175,14 @@ read_with_prompt() {
   local __var="$1"
   local __prompt="$2"
   local __line=""
-  # -p prints prompt; -e enables line editing; read from controlling tty
+  # -p keeps prompt and input on one line; -e needs readline (fallback without -e)
   if interactive_tty; then
-    if ! IFS= read -r -e -p "$__prompt" __line < /dev/tty; then
-      die "Could not read input from /dev/tty. Try: ssh -t root@host"
+    if ! IFS= read -r -e -p "$__prompt" __line < /dev/tty 2>/dev/null; then
+      if ! IFS= read -r -p "$__prompt" __line < /dev/tty; then
+        die "Could not read input from /dev/tty. Try: ssh -t root@host"
+      fi
     fi
-  elif ! IFS= read -r -e -p "$__prompt" __line; then
+  elif ! IFS= read -r -p "$__prompt" __line; then
     die "Could not read input. Use an SSH session with a TTY (ssh -t root@host)."
   fi
   __line="$(trim_line "$__line")"
@@ -205,10 +219,15 @@ prompt() {
       if ! "$validate" "$input"; then
         if [[ "$validate" == "is_ipv4" ]]; then
           warn "Invalid IPv4 — use four decimal octets, e.g. 203.0.113.50"
+        elif [[ "$validate" == "is_domain" ]]; then
+          warn "Invalid domain — use e.g. tg.example.com (no https://)"
         else
           warn "Invalid value — try again."
         fi
         continue
+      fi
+      if [[ "$validate" == "is_ipv4" ]]; then
+        input="$(sanitize_ip_input "$input")"
       fi
     fi
     printf -v "$var_name" '%s' "$input"
@@ -326,11 +345,12 @@ clone_or_update_repo() {
 }
 
 set_env() {
-  local key="$1" val="$2"
+  local key="$1" val="$2" escaped
+  escaped="$(escape_sed_repl "$val")"
   if grep -q "^${key}=" .env; then
-    sed -i "s|^${key}=.*|${key}=${val}|" .env
+    sed -i "s|^${key}=.*|${key}=${escaped}|" .env
   else
-    echo "${key}=${val}" >> .env
+    printf '%s=%s\n' "${key}" "${val}" >> .env
   fi
 }
 
@@ -388,8 +408,9 @@ write_env_file() {
 }
 
 patch_compose() {
-  local file="$1"
+  local file="$1" turn_pass_escaped
   [[ -f "$file" ]] || die "Missing ${file}"
+  turn_pass_escaped="$(escape_sed_repl "${TURN_PASS}")"
 
   sed -i \
     -e "s|\"5348:5348\"|\"${PORT_STUN}:${PORT_STUN}\"|g" \
@@ -398,7 +419,7 @@ patch_compose() {
     -e "s|--listening-port 5348|--listening-port ${PORT_STUN}|g" \
     -e "s|--min-port 49152|--min-port ${PORT_RELAY_MIN}|g" \
     -e "s|--max-port 49172|--max-port ${PORT_RELAY_MAX}|g" \
-    -e "s|--user testgram:testgram2024|--user ${TURN_USER}:${TURN_PASS}|g" \
+    -e "s|--user testgram:testgram2024|--user ${TURN_USER}:${turn_pass_escaped}|g" \
     "$file"
 }
 
@@ -631,7 +652,7 @@ run_install_wizard() {
   else
     prompt_yes_no INSTALL_DOCKER "Install Docker via get.docker.com?" "yes"
   fi
-  if is_yes "${DO_FIREWALL}" || [[ "${DO_FIREWALL}" == true ]]; then
+  if is_yes "${DO_FIREWALL}"; then
     prompt_yes_no DO_FIREWALL "Configure UFW firewall on this host?" "yes"
   fi
 

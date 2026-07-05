@@ -23,7 +23,7 @@
 #   --help               show help
 set -euo pipefail
 
-INSTALLER_VERSION="3.0.4"
+INSTALLER_VERSION="3.0.5"
 
 REPO_URL="${REPO_URL:-https://github.com/CyberoniOntoni/testgram.git}"
 REPO_BRANCH="${REPO_BRANCH:-dev}"
@@ -82,17 +82,16 @@ resolve_installer_lib() {
   local cached="${cache_dir}/installer-lib.sh"
   local raw_url="https://raw.githubusercontent.com/CyberoniOntoni/testgram/${REPO_BRANCH}/deploy/lib/installer-lib.sh"
   mkdir -p "${cache_dir}"
-  if [[ ! -f "${cached}" ]]; then
-    if command -v curl >/dev/null 2>&1; then
-      curl -fsSL "${raw_url}" -o "${cached}"
-    elif command -v wget >/dev/null 2>&1; then
-      wget -qO "${cached}" "${raw_url}"
-    else
-      printf 'ERROR: installer-lib.sh not found next to install.sh and curl/wget unavailable\n' >&2
-      printf 'Clone the repo instead: git clone -b %s %s\n' "${REPO_BRANCH}" "${REPO_URL}" >&2
-      return 1
-    fi
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "${raw_url}" -o "${cached}"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO "${cached}" "${raw_url}"
+  else
+    printf 'ERROR: installer-lib.sh not found next to install.sh and curl/wget unavailable\n' >&2
+    printf 'Clone the repo instead: git clone -b %s %s\n' "${REPO_BRANCH}" "${REPO_URL}" >&2
+    return 1
   fi
+  [[ -s "${cached}" ]] || return 1
   printf '%s\n' "${cached}"
 }
 
@@ -159,6 +158,10 @@ if [[ "${NON_INTERACTIVE}" == true ]]; then
     PASSKEY_DOMAIN="${PASSKEY_DOMAIN:-localhost}"
   fi
   TURN_PASS="${TURN_PASS:-$(openssl rand -hex 16)}"
+  PUBLIC_IP="$(sanitize_ip_input "${PUBLIC_IP}")"
+  LAN_IP="$(sanitize_ip_input "${LAN_IP}")"
+  is_ipv4 "${PUBLIC_IP}" || die "Invalid PUBLIC_IP: ${PUBLIC_IP}"
+  is_ipv4 "${LAN_IP}" || die "Invalid LAN_IP: ${LAN_IP}"
   run_install_apply
 else
   run_install_wizard
