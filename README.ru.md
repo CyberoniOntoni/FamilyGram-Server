@@ -41,11 +41,13 @@
 
 ### Быстрый старт через Docker
 
-1. Скачайте файлы Docker Compose:
+1. Получите настройку Docker Compose. `docker-compose.yml` монтирует несколько вспомогательных файлов из этой
+   же директории (`init-calls.sh`, `init-business.sh`, `init-botfather.sh`, `minio-proxy.conf` и т.д.), поэтому
+   склонируйте репозиторий целиком, а не скачивайте один `docker-compose.yml`:
 
-```
-curl -O https://raw.githubusercontent.com/glebxdlolreal/testgram/dev/docker/compose/docker-compose.yml
-curl -O https://raw.githubusercontent.com/glebxdlolreal/testgram/dev/docker/compose/.env.example
+```bash
+git clone --depth 1 https://github.com/is-a-developers/testgram.git
+cd testgram/docker/compose
 cp .env.example .env
 ```
 
@@ -72,6 +74,10 @@ docker compose up -d
 | `App__AccessHashSecretKey` | Случайный секретный ключ |
 | `App__EncryptionConfig__MessageKeys__0__Key` | Ключ шифрования в Base64 |
 | `App__FixedVerifyCode` | Фиксированный SMS-код для тестирования (оставьте пустым в продакшене) |
+| `BOT_TOKEN` | Токен Telegram-бота для доставки кодов входа (см. [Бот верификации](#бот-верификации)) |
+
+`BOT_TOKEN` необязателен для первого запуска — контейнер `bot` просто будет перезапускаться, пока токен не задан,
+остальной стек это не блокирует — но коды входа не дойдут до реальных пользователей, пока бот не настроен.
 
 ### Настройка голосовых и видеозвонков
 
@@ -223,12 +229,20 @@ ghcr.io/is-a-developers/testgram/<service-name>:<git-sha>
 
 ### Локальная сборка
 
+Скрипты `build/docker/*.sh` по умолчанию тегируют образы как `mytelegram/<service-name>`. `docker-compose.yml`
+использует `${TestgramRegistry}/<service-name>:${TestgramVersion}` (по умолчанию `ghcr.io/is-a-developers/testgram`),
+поэтому перед сборкой установите `REGISTRY_URL` в то же значение — иначе `docker compose up -d` просто заново
+скачает образ из GHCR вместо локально собранного:
+
 ```bash
 # Linux amd64
-cd build/docker && ./build-all-amd64.sh
+cd build/docker
+export REGISTRY_URL="ghcr.io/is-a-developers/testgram"   # должно совпадать с TestgramRegistry в .env
+./build-all-amd64.sh
 
 # Linux arm64
-cd build/docker && ./build-all-arm64.sh
+export REGISTRY_URL="ghcr.io/is-a-developers/testgram"
+./build-all-arm64.sh
 ```
 
 ## Клиенты
@@ -428,7 +442,7 @@ python3 seed_reactions.py --generate-handler
 
 # 4. Пересобрать и задеплоить образы messenger
 cd ../build/docker
-export REGISTRY_URL="mytelegram"
+export REGISTRY_URL="ghcr.io/is-a-developers/testgram"   # должно совпадать с TestgramRegistry в .env
 bash 1.build-messenger-command-server.sh
 bash 2.build-messenger-query-server.sh
 cd ../../docker/compose && docker compose down && docker compose up -d

@@ -42,11 +42,13 @@
 
 ### Quick Start with Docker
 
-1. Download the Docker Compose files:
+1. Get the Docker Compose setup. `docker-compose.yml` bind-mounts several helper scripts
+   (`init-calls.sh`, `init-business.sh`, `init-botfather.sh`, `minio-proxy.conf`, ...) from this directory,
+   so clone the repo rather than downloading `docker-compose.yml` on its own:
 
-```
-curl -O https://raw.githubusercontent.com/glebxdlolreal/testgram/dev/docker/compose/docker-compose.yml
-curl -O https://raw.githubusercontent.com/glebxdlolreal/testgram/dev/docker/compose/.env.example
+```bash
+git clone --depth 1 https://github.com/is-a-developers/testgram.git
+cd testgram/docker/compose
 cp .env.example .env
 ```
 
@@ -73,6 +75,10 @@ Key `.env` settings:
 | `App__AccessHashSecretKey` | Random secret key |
 | `App__EncryptionConfig__MessageKeys__0__Key` | Base64 encryption key |
 | `App__FixedVerifyCode` | Fixed SMS code for testing (leave empty in production) |
+| `BOT_TOKEN` | Telegram bot token used to deliver login codes (see [Verification Bot](#verification-bot)) |
+
+`BOT_TOKEN` is optional for a first boot — the `bot` container just restarts until it's set, it doesn't block the
+rest of the stack — but login codes won't reach real users' Telegram accounts until it's configured.
 
 ### Voice & Video Calls Setup
 
@@ -222,12 +228,20 @@ You can also trigger a build manually from the **Actions** tab (`workflow_dispat
 
 ### Local build
 
+`build/docker/*.sh` default to tagging images as `mytelegram/<service-name>`. `docker-compose.yml` pulls
+`${TestgramRegistry}/<service-name>:${TestgramVersion}` (default `ghcr.io/is-a-developers/testgram`), so set
+`REGISTRY_URL` to the same value before building, or `docker compose up -d` will just re-pull from GHCR instead
+of using your local build:
+
 ```bash
 # Linux amd64
-cd build/docker && ./build-all-amd64.sh
+cd build/docker
+export REGISTRY_URL="ghcr.io/is-a-developers/testgram"   # match TestgramRegistry in .env
+./build-all-amd64.sh
 
 # Linux arm64
-cd build/docker && ./build-all-arm64.sh
+export REGISTRY_URL="ghcr.io/is-a-developers/testgram"
+./build-all-arm64.sh
 ```
 
 ## Clients
@@ -428,7 +442,7 @@ python3 seed_reactions.py --generate-handler
 
 # 4. Rebuild and redeploy messenger images
 cd ../build/docker
-export REGISTRY_URL="mytelegram"
+export REGISTRY_URL="ghcr.io/is-a-developers/testgram"   # match TestgramRegistry in .env
 bash 1.build-messenger-command-server.sh
 bash 2.build-messenger-query-server.sh
 cd ../../docker/compose && docker compose down && docker compose up -d

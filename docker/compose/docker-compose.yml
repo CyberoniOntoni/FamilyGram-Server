@@ -706,8 +706,13 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      # Soft dependency only: if BOT_TOKEN isn't configured yet, the bot container
+      # keeps restarting and never reports healthy. sms-sender must still start -
+      # TelegramBotSmsSender already logs and swallows failures when bot is
+      # unreachable, so a hard service_healthy dependency here would block the
+      # whole stack on the bot being configured.
       bot:
-        condition: service_healthy
+        condition: service_started
 
   ### 8.Verification bot (delivers login codes to Telegram accounts that linked a phone number)
   bot:
