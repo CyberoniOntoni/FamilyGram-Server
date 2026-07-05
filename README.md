@@ -44,15 +44,63 @@
 
 See **[deploy/DEPLOYMENT-example.md](deploy/DEPLOYMENT-example.md)** for complete Proxmox, Cloudflare, NPM, secrets, bot, and client setup.
 
-Quick install (interactive Docker wizard):
+Quick install (interactive Docker wizard, v3.1.2):
+
+```bash
+# Prefer cloning — installer needs deploy/lib/installer-lib.sh
+git clone --branch dev https://github.com/CyberoniOntoni/testgram.git /opt/testgram
+cd /opt/testgram
+bash deploy/install.sh          # use ssh -t if prompts don't echo input
+```
+
+Or download the script pair:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/lib/installer-lib.sh -o installer-lib.sh
 sudo bash install.sh
 ```
 
-Save the file first — do **not** use `curl ... | bash` (breaks prompts).  
+Save scripts first — do **not** use `curl ... | bash` (breaks interactive prompts).  
 Proxmox LXC: `deploy/install-lxc.sh` is a thin wrapper around the same installer.
+
+Non-interactive example:
+
+```bash
+PUBLIC_IP=1.2.3.4 LAN_IP=192.168.1.10 BOT_TOKEN='123456789:AAH...' \
+  bash deploy/install.sh --non-interactive --start
+```
+
+Run `bash deploy/verify-installer.sh` on the host to sanity-check the installer scripts.
+
+#### Installer prompts — typical choices
+
+| Prompt | Small private server | Notes |
+|--------|----------------------|-------|
+| Passkey (WebAuthn) | **No** | Needs HTTPS + domain + NPM; not required for normal login |
+| RTMP live streaming | **No** | Only for OBS-style live broadcasts |
+| Bot token | **Yes** | One `@BotFather` bot serves all users; delivers login codes |
+| Customize ports | **No** | Defaults work (`20443`–`20644`, STUN/TURN `5348`) |
+
+Public WAN IP goes into client configs and `.env` (`DcOptions`, WebRTC). LAN IP is only for router port-forward targets — never put the LAN IP in `DcOptions`.
+
+#### Router / firewall port forwards
+
+Notation: `port(PROTO)` — `TCP&UDP` means create **both** TCP and UDP rules to the same WAN port → your host LAN IP.
+
+| WAN port | Required | Service |
+|----------|----------|---------|
+| `20443(TCP)` | yes | MTProto DC1 (main client entry) |
+| `20543(TCP)` | yes | MTProto DC2 |
+| `20643(TCP)` | yes | MTProto DC3 |
+| `20644(TCP)` | yes | MTProto DC4 (media) |
+| `5348(TCP&UDP)` | yes | STUN/TURN (voice/video) |
+| `49152-49172(UDP)` | yes | TURN relay media |
+| `30443(TCP)` | optional | HTTPS (passkey / web only) |
+| `1935(TCP)`, `8888(TCP)` | optional | RTMP live (only if RTMP enabled) |
+| **`5005`** | **no** | Internal Docker only (`sms-sender` → `bot`); bot talks **outbound** to Telegram |
+
+MTProto must go **direct** to your public IP — not through Cloudflare orange-cloud or Nginx Proxy Manager.
 
 ### Quick Start with Docker
 
@@ -70,11 +118,12 @@ cp .env.example .env
    - Replace `YOUR_SERVER_IP` with your server's public IP address
    - Set strong passwords for `CHANGE_ME` fields (RabbitMQ, Minio, encryption keys)
 
-3. Start the server:
+3. Prepare data directories and start:
 
 ```bash
-mkdir -p ./data/mytelegram
-chmod -R a+w ./data/mytelegram
+mkdir -p ./data/mytelegram/data-seeder/downloads ./data/mytelegram/data-seeder/logs
+mkdir -p ./data/{mongo/db,mongo/configdb,minio,coturn,rtmp,bot,redis,rabbitmq,geoip}
+chmod -R a+w ./data
 docker compose up -d
 ```
 
@@ -88,11 +137,26 @@ Key `.env` settings:
 | `RabbitMQ__Connections__Default__Password` | RabbitMQ password |
 | `App__AccessHashSecretKey` | Random secret key |
 | `App__EncryptionConfig__MessageKeys__0__Key` | Base64 encryption key |
-| `App__FixedVerifyCode` | Fixed SMS code for testing (leave empty in production) |
+| `App__FixedVerifyCode` | Fixed code for all logins (testing only; leave empty in production) |
 | `BOT_TOKEN` | Telegram bot token used to deliver login codes (see [Verification Bot](#verification-bot)) |
+| `App__RtmpStreamUrl` / `App__RtmpHlsUrl` | RTMP live streaming (optional; leave empty if disabled) |
+| `TwilioSms__*` | Real SMS via Twilio (optional; leave empty when using the bot) |
 
-`BOT_TOKEN` is optional for a first boot — the `bot` container just restarts until it's set, it doesn't block the
-rest of the stack — but login codes won't reach real users' Telegram accounts until it's configured.
+`BOT_TOKEN` is optional for a first boot — the `bot` container keeps restarting until it's set and does not block
+the rest of the stack — but login codes won't reach real users' Telegram accounts until it's configured.
+
+Silence harmless `docker compose` warnings about unset optional variables by adding empty defaults to `.env`:
+
+```bash
+App__RtmpStreamUrl=
+App__RtmpHlsUrl=
+App__FixedVerifyCode=
+TwilioSms__Enabled=False
+TwilioSms__AccountSId=
+TwilioSms__AuthToken=
+TwilioSms__FromNumber=
+TwilioSms__MessagingServiceSId=
+```
 
 ### Voice & Video Calls Setup
 
@@ -125,6 +189,37 @@ cd scripts && ./setup_call_indexes.sh  # Optional: manual setup
 See [docs/CALLS_SETUP.md](docs/CALLS_SETUP.md) for complete setup instructions.
 
 ## Troubleshooting
+
+### `docker compose` warns about unset `App__Rtmp*` / `TwilioSms__*` / `App__FixedVerifyCode`
+
+These are optional features. Empty values are fine. Add the blank defaults from [Configuration](#configuration) to `.env` if you want the warnings gone.
+
+### `data-seeder` — `Permission denied` on `/app/downloads/dataseeder.json`
+
+The data-seeder container must write under the mounted `downloads` volume:
+
+```bash
+cd docker/compose
+mkdir -p data/mytelegram/data-seeder/downloads data/mytelegram/data-seeder/logs
+chmod -R a+w data/mytelegram/data-seeder
+docker compose restart data-seeder
+docker compose logs data-seeder | tail -20   # expect: "All data created"
+```
+
+### `data-seeder` — `Russian language pack file is missing`
+
+The host bind-mount hides language packs baked into the image. Copy them once:
+
+```bash
+cd docker/compose
+cid=$(docker create ghcr.io/cyberoniontoni/testgram/mytelegram-data-seeder:latest)
+docker cp "$cid:/app/downloads/langpacks" ./data/mytelegram/data-seeder/downloads/
+docker rm "$cid"
+chmod -R a+w data/mytelegram/data-seeder/downloads
+docker compose restart data-seeder messenger-query-server
+```
+
+Or copy from the repo: `source/src/MyTelegram.DataSeeder/downloads/langpacks/ru/android.json` into `data/mytelegram/data-seeder/downloads/langpacks/ru/`.
 
 ### Clients get `ConnectionRefusedError` (connection to server fails)
 
@@ -275,15 +370,37 @@ export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"
 ## Verification Bot
 
 The repo includes a Telegram bot (`bot/`) that delivers login/verification codes to the Telegram account a user
-linked their phone number with (`/start` → add number). `sms-sender` calls its `/send` HTTP endpoint whenever
-`auth.sendCode`/`auth.resendCode` issues a code; it can optionally also consume `AppCodeCreatedIntegrationEvent`
-straight off RabbitMQ (`ENABLE_RABBITMQ_CONSUMER=true`).
+linked their phone number with (`/start` → add number). One bot serves your whole group — you do not need a bot
+per user.
+
+```text
+Client login  →  auth.sendCode  →  sms-sender  →  http://bot:5005/send  (Docker internal)
+                                                      ↓
+                                            Telegram DM with code (outbound to api.telegram.org)
+
+User links phone  →  Telegram app  →  @YourBot  →  /start  (via Telegram cloud, not your router)
+```
+
+- **Do not port-forward 5005** — it is only reachable inside the Docker network.
+- The bot uses **long polling** (outbound HTTPS to Telegram). Your host only needs general internet access.
+- `sms-sender` already points at `http://bot:5005/send` in `docker-compose.yml`.
+
+**Setup:**
+
+1. Create a bot in [@BotFather](https://t.me/BotFather) → `/newbot` → copy the token.
+2. Set `BOT_TOKEN=...` in `docker/compose/.env` (or pass it to `deploy/install.sh`).
+3. After the stack is up, each user opens **your** bot in Telegram → `/start` → links their phone number.
+4. On Testgram client login with that number, the code arrives in the bot chat.
+
+`sms-sender` can optionally also consume `AppCodeCreatedIntegrationEvent` from RabbitMQ
+(`ENABLE_RABBITMQ_CONSUMER=true` in the bot service).
 
 **Docker (recommended, already wired into `docker-compose.yml`):**
 
 ```bash
 # In .env: set BOT_TOKEN (and optionally BOT_TOKEN1, BOT_TOKEN2, ...)
 docker compose up -d bot
+docker compose logs bot   # expect: "Configured bot @your_bot" and "Bot started on port 5005"
 ```
 
 **Manual (without Docker):**
