@@ -189,7 +189,7 @@ services:
 
 ### Data seeder
   data-seeder:
-    image: ${MyTelegramRegistry}/mytelegram-data-seeder:${MyTelegramVersion}
+    image: ${TestgramRegistry}/mytelegram-data-seeder:${TestgramVersion}
     restart: always
     networks:
       - tg-net
@@ -217,7 +217,7 @@ services:
 
   ### 1.Gateway server
   gateway-server:
-    image: ${MyTelegramRegistry}/mytelegram-gateway-server:${MyTelegramVersion}
+    image: ${TestgramRegistry}/mytelegram-gateway-server:${TestgramVersion}
     restart: always
     networks:
       - tg-net
@@ -327,7 +327,7 @@ services:
 
   ### 2.Auth server
   auth-server:
-    image: ${MyTelegramRegistry}/mytelegram-auth-server:${MyTelegramVersion}
+    image: ${TestgramRegistry}/mytelegram-auth-server:${TestgramVersion}
     restart: always
     networks:
       - tg-net
@@ -361,6 +361,8 @@ services:
         condition: service_healthy
 
   ### 3.Session server
+  # Not built by this fork's CI (no source/Dockerfile in this repo) - pulled from
+  # the upstream MyTelegram registry.
   session-server:
     image: ${MyTelegramRegistry}/mytelegram-session-server:${MyTelegramVersion}
     restart: always
@@ -418,6 +420,8 @@ services:
   #     - mongodb
 
   ### 4.File server
+  # Not built by this fork's CI (no source/Dockerfile in this repo) - pulled from
+  # the upstream MyTelegram registry.
   file-server:
     image: ${MyTelegramRegistry}/mytelegram-file-server:${MyTelegramVersion}
     user: "1654"
@@ -461,7 +465,7 @@ services:
 
   ### 5.Messenger command server
   messenger-command-server:
-    image: ${MyTelegramRegistry}/mytelegram-messenger-command-server:${MyTelegramVersion}
+    image: ${TestgramRegistry}/mytelegram-messenger-command-server:${TestgramVersion}
     restart: always
     networks:
       - tg-net
@@ -568,7 +572,7 @@ services:
 
   ### 6.Messenger query server
   messenger-query-server:
-    image: ${MyTelegramRegistry}/mytelegram-messenger-query-server:${MyTelegramVersion}
+    image: ${TestgramRegistry}/mytelegram-messenger-query-server:${TestgramVersion}
     restart: always
     networks:
       - tg-net
@@ -674,7 +678,7 @@ services:
 
   ### 7.Sms sender
   sms-sender:
-    image: ${MyTelegramRegistry}/mytelegram-sms-sender:${MyTelegramVersion}
+    image: ${TestgramRegistry}/mytelegram-sms-sender:${TestgramVersion}
     restart: always
     networks:
       - tg-net

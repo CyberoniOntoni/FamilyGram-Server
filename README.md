@@ -196,6 +196,32 @@ docker compose up -d --force-recreate file-server
 
 ## Building Docker Images
 
+### CI (GitHub Actions)
+
+[`.github/workflows/docker-build.yml`](.github/workflows/docker-build.yml) builds the six services this fork
+carries source for — `messenger-command-server`, `messenger-query-server`, `gateway-server`, `auth-server`,
+`sms-sender`, `data-seeder` — and pushes them to GHCR on every push to `dev` and on `v*.*.*` tags (pull requests
+build but don't push). Images are published as:
+
+```
+ghcr.io/is-a-developers/testgram/<service-name>:latest
+ghcr.io/is-a-developers/testgram/<service-name>:<version>   # from build/version.txt
+ghcr.io/is-a-developers/testgram/<service-name>:<git-sha>
+```
+
+`docker-compose.yml` already points at these images through `TestgramRegistry`/`TestgramVersion` in `.env`
+(see `.env.example`), so `docker compose pull && docker compose up -d` picks up whatever CI published. `session-server`
+and `file-server` aren't part of this fork's source, so they keep pulling prebuilt images from the upstream
+MyTelegram registry via the separate `MyTelegramRegistry`/`MyTelegramVersion` variables.
+
+> GHCR packages are private by default even on a public repo. The first time the workflow runs, make each
+> `ghcr.io/is-a-developers/testgram/<service-name>` package public under the repo/org's **Packages** settings,
+> or `docker login ghcr.io` with a token that has `read:packages` before pulling.
+
+You can also trigger a build manually from the **Actions** tab (`workflow_dispatch`).
+
+### Local build
+
 ```bash
 # Linux amd64
 cd build/docker && ./build-all-amd64.sh
