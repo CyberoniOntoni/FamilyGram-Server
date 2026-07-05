@@ -11,16 +11,25 @@ namespace MyTelegram.Messenger.Handlers.LatestLayer.Account;
 /// <remarks>
 /// Access: [User ✔] [Bot ✖] [Anonymous ✖]
 /// </remarks>
-internal sealed class CheckUsernameHandler(IQueryProcessor queryProcessor, IUsernameHelper usernameHelper) : RpcResultObjectHandler<MyTelegram.Schema.Account.RequestCheckUsername, IBool>
+internal sealed class CheckUsernameHandler(
+    IQueryProcessor queryProcessor,
+    IUsernameHelper usernameHelper,
+    IOptionsMonitor<MyTelegramMessengerServerOptions> options)
+    : RpcResultObjectHandler<MyTelegram.Schema.Account.RequestCheckUsername, IBool>
 {
-    protected override async Task<IBool> HandleCoreAsync(IRequestInput input, MyTelegram.Schema.Account.RequestCheckUsername obj)
+    protected override async Task<IBool> HandleCoreAsync(IRequestInput input,
+        MyTelegram.Schema.Account.RequestCheckUsername obj)
     {
         if (!string.IsNullOrEmpty(obj.Username))
         {
             if (!usernameHelper.IsValidUsername(obj.Username))
             {
-                //return new TBoolFalse();
                 RpcErrors.RpcErrors400.UsernameInvalid.ThrowRpcError();
+            }
+
+            if (options.CurrentValue.ProtectedUsernames.Contains(obj.Username, StringComparer.OrdinalIgnoreCase))
+            {
+                RpcErrors.RpcErrors400.UsernamePurchaseAvailable.ThrowRpcError();
             }
         }
 

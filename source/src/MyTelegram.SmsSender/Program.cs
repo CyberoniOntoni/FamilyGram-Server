@@ -34,6 +34,7 @@ builder.UseSerilog((context,
 builder.ConfigureServices((context,
     services) =>
 {
+    services.Configure<MyTelegram.Services.AppBrandingOptions>(context.Configuration.GetSection("App"));
     services.Configure<TwilioSmsOptions>(context.Configuration.GetRequiredSection("TwilioSms"));
     services.Configure<TelegramBotSmsOptions>(context.Configuration.GetSection("TelegramBotSms"));
     services.Configure<EventBusRabbitMqOptions>(context.Configuration.GetRequiredSection("RabbitMQ:EventBus"));

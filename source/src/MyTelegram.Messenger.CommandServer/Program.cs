@@ -9,6 +9,7 @@ using MyTelegram.Messenger.Services.Email;
 using MyTelegram.Messenger.CommandServer.BackgroundServices;
 using MyTelegram.Messenger.CommandServer.Extensions;
 using MyTelegram.Messenger.Services.HistoryTTL;
+using MyTelegram.Services;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 using MyTelegramConsts = MyTelegram.MyTelegramConsts;
@@ -65,6 +66,8 @@ builder.ConfigureServices((ctx,
         .ValidateDataAnnotations()
         .ValidateOnStart()
         ;
+
+    services.Configure<AppBrandingOptions>(ctx.Configuration.GetRequiredSection("App"));
 
     services.Configure<EmailSenderOptions>(ctx.Configuration.GetRequiredSection("EmailSenderOptions"));
     var appConfig = ctx.Configuration.GetRequiredSection("App").Get<MyTelegramMessengerServerOptions>();

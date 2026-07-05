@@ -1,8 +1,10 @@
-﻿using MyTelegram.Schema.Help;
+﻿using Microsoft.Extensions.Options;
+using MyTelegram.Services;
+using MyTelegram.Schema.Help;
 
 namespace MyTelegram.Converters.TLObjects.LatestLayer;
 
-public class PremiumPromoConverter : IPremiumPromoConverter, ITransientDependency
+public class PremiumPromoConverter(IOptionsMonitor<AppBrandingOptions> options) : IPremiumPromoConverter, ITransientDependency
 {
 
     public virtual int Layer => Layers.LayerLatest;
@@ -14,7 +16,7 @@ public class PremiumPromoConverter : IPremiumPromoConverter, ITransientDependenc
         return new TPremiumPromo
         {
             StatusText =
-                "By subscribing to Testgram Premium you agree to the Testgram Terms of Service and Privacy Policy.",
+                $"By subscribing to {options.CurrentValue.Brand} Premium you agree to the {options.CurrentValue.Brand} Terms of Service and Privacy Policy.",
             StatusEntities = new TVector<IMessageEntity>(),
             Users = new TVector<IUser>(),
             VideoSections = new TVector<string>

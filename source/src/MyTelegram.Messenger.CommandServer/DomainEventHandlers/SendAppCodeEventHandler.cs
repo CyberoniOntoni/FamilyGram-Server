@@ -4,7 +4,8 @@ public class SendAppCodeEventHandler(
     ILogger<SendAppCodeEventHandler> logger,
     IEventBus eventBus,
     IMessageAppService messageAppService,
-    IRandomHelper randomHelper)
+    IRandomHelper randomHelper,
+    IOptionsMonitor<MyTelegramMessengerServerOptions> options)
     :
         ISubscribeSynchronousTo<AppCodeAggregate, AppCodeId, AppCodeCreatedEvent>,
         ISubscribeSynchronousTo<AppCodeAggregate, AppCodeId, AppCodeResentEvent>
@@ -30,17 +31,9 @@ public class SendAppCodeEventHandler(
 
         if (userId != 0)
         {
+            var brand = options.CurrentValue.Brand;
             var message =
-                $"Login code: {code}. Do not give this code to anyone, even if they say they are from Telegram!\n\nThis code can be used to log in to your Telegram account. We never ask it for anything else.\n\nIf you didn't request this code by trying to log in on another device, simply ignore this message.\n\nPowered by Testgram\nhttps://github.com/glebxdlolreal/testgram";
-            var entities = new TVector<IMessageEntity>
-            {
-                new TMessageEntityBold { Offset = 0, Length = 11 },
-                new TMessageEntitySpoiler{Offset = 12,Length = code.Length},
-                new TMessageEntityBold { Offset = 22, Length = 3 },
-                new TMessageEntityBold { Offset = message.Length-48, Length = 11 },
-
-            };
-
+                $"Login code: {code}. Do not give this code to anyone, even if they say they are from {brand}!\n\nThis code can be used to log in to your {brand} account. We never ask it for anything else.\n\nIf you didn't request this code by trying to log in on another device, simply ignore this message.";
             var sendMessageInput = new SendMessageInput(
                 RequestInfo.Empty with
                 {
@@ -52,8 +45,7 @@ public class SendAppCodeEventHandler(
                 MyTelegramConsts.NotificationServiceUserId,
                 new Peer(PeerType.User, userId),
                 message,
-                randomHelper.NextInt64(),
-                entities: entities
+                randomHelper.NextInt64()
             );
 
             await messageAppService.SendMessageAsync([sendMessageInput]);

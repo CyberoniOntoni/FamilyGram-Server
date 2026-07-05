@@ -1,6 +1,9 @@
 ﻿namespace MyTelegram.SmsSender.EventHandlers;
 
-public class AppCodeEventHandler(ISmsSenderFactory smsSenderFactory, ILogger<AppCodeEventHandler> logger)
+public class AppCodeEventHandler(
+    ISmsSenderFactory smsSenderFactory,
+    ILogger<AppCodeEventHandler> logger,
+    IOptionsMonitor<MyTelegram.Services.AppBrandingOptions> options)
     : IEventHandler<AppCodeCreatedIntegrationEvent>, ITransientDependency
 {
     public async Task HandleEventAsync(AppCodeCreatedIntegrationEvent eventData)
@@ -21,7 +24,8 @@ public class AppCodeEventHandler(ISmsSenderFactory smsSenderFactory, ILogger<App
         try
         {
             var smsSender = smsSenderFactory.Create(eventData.PhoneNumber);
-            await smsSender.SendAsync(phoneNumber, $"MyTelegram code: {eventData.Code}");
+            var brand = options.CurrentValue.Brand ?? "Testgram";
+            await smsSender.SendAsync(phoneNumber, $"{brand} code: {eventData.Code}");
         }
         catch (Exception ex)
         {

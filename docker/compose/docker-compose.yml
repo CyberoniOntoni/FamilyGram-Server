@@ -196,9 +196,14 @@ services:
     environment:
       Serilog__MinimumLevel__Default: ${Serilog__MinimumLevel__Default}
       ConnectionStrings__Default: ${ConnectionStrings__Default}
+      App__Brand: ${App__Brand:-Testgram}
       App__DatabaseName: ${App__DatabaseName}
       App__ReadModelDatabaseName: ${App__ReadModelDatabaseName}
       App__CreateTestUsers: ${App__CreateTestUsers}
+      App__ProtectedUsernames__0: ${App__ProtectedUsernames__0:-admin}
+      App__ProtectedUsernames__1: ${App__ProtectedUsernames__1:-botfather}
+      App__ProtectedUsernames__2: ${App__ProtectedUsernames__2:-support}
+      App__ProtectedUsernames__3: ${App__ProtectedUsernames__3:-telegram}
       # App__LoadAllStickersIntoMemory: ${App__LoadAllStickersIntoMemory}
       RabbitMQ__Connections__Default__HostName: ${RabbitMQ__Connections__Default__HostName:-rabbitmq}
       RabbitMQ__Connections__Default__Port: ${RabbitMQ__Connections__Default__Port:-5672}
@@ -485,6 +490,8 @@ services:
     environment:
       Serilog__MinimumLevel__Default: ${Serilog__MinimumLevel__Default}
       ConnectionStrings__Default: ${ConnectionStrings__Default}
+      App__Brand: ${App__Brand:-Testgram}
+      App__WelcomeMsg: ${App__WelcomeMsg:-Welcome to Testgram! Your account has been created.}
       App__DatabaseName: ${App__DatabaseName}
       App__ReadModelDatabaseName: ${App__ReadModelDatabaseName}
       App__AccessHashSecretKey: ${App__AccessHashSecretKey}
@@ -494,6 +501,11 @@ services:
       App__VerificationCodeExpirationSeconds: ${App__VerificationCodeExpirationSeconds}
       App__CheckPhoneNumberFormat: ${App__CheckPhoneNumberFormat}
       App__EnableSearchNonContacts: ${App__EnableSearchNonContacts}
+      App__SendWelcomeMessageAfterUserSignIn: ${App__SendWelcomeMessageAfterUserSignIn:-False}
+      App__ProtectedUsernames__0: ${App__ProtectedUsernames__0:-admin}
+      App__ProtectedUsernames__1: ${App__ProtectedUsernames__1:-botfather}
+      App__ProtectedUsernames__2: ${App__ProtectedUsernames__2:-support}
+      App__ProtectedUsernames__3: ${App__ProtectedUsernames__3:-telegram}
       App__EncryptionConfig__Enabled: ${App__EncryptionConfig__Enabled}
       App__EncryptionConfig__MessageKeys__0__Id: ${App__EncryptionConfig__MessageKeys__0__Id}
       App__EncryptionConfig__MessageKeys__0__Key: ${App__EncryptionConfig__MessageKeys__0__Key}
@@ -579,6 +591,7 @@ services:
     environment:
       Serilog__MinimumLevel__Default: ${Serilog__MinimumLevel__Default}
       ConnectionStrings__Default: ${ConnectionStrings__Default}
+      App__Brand: ${App__Brand:-Testgram}
       App__DatabaseName: ${App__DatabaseName}
       App__ReadModelDatabaseName: ${App__ReadModelDatabaseName}
       App__AccessHashSecretKey: ${App__AccessHashSecretKey}
@@ -587,6 +600,10 @@ services:
       App__VerificationCodeLength: ${App__VerificationCodeLength}
       App__VerificationCodeExpirationSeconds: ${App__VerificationCodeExpirationSeconds}
       App__EnableSearchNonContacts: ${App__EnableSearchNonContacts}
+      App__ProtectedUsernames__0: ${App__ProtectedUsernames__0:-admin}
+      App__ProtectedUsernames__1: ${App__ProtectedUsernames__1:-botfather}
+      App__ProtectedUsernames__2: ${App__ProtectedUsernames__2:-support}
+      App__ProtectedUsernames__3: ${App__ProtectedUsernames__3:-telegram}
       App__EncryptionConfig__Enabled: ${App__EncryptionConfig__Enabled}
       App__EncryptionConfig__MessageKeys__0__Id: ${App__EncryptionConfig__MessageKeys__0__Id}
       App__EncryptionConfig__MessageKeys__0__Key: ${App__EncryptionConfig__MessageKeys__0__Key}
@@ -684,6 +701,7 @@ services:
       - tg-net
     environment:
       Serilog__MinimumLevel__Default: ${Serilog__MinimumLevel__Default}
+      App__Brand: ${App__Brand:-Testgram}
       TwilioSms__Enabled: ${TwilioSms__Enabled}
       TwilioSms__AccountSId: ${TwilioSms__AccountSId}
       TwilioSms__AuthToken: ${TwilioSms__AuthToken}

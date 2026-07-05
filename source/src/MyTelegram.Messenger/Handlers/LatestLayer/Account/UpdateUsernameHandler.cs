@@ -12,7 +12,13 @@ namespace MyTelegram.Messenger.Handlers.LatestLayer.Account;
 /// <remarks>
 /// Access: [User ✔] [Bot ✖] [Anonymous ✖]
 /// </remarks>
-internal sealed class UpdateUsernameHandler(ICommandBus commandBus, IQueryProcessor queryProcessor, IUserAppService userAppService, IUsernameHelper usernameHelper) : RpcResultObjectHandler<MyTelegram.Schema.Account.RequestUpdateUsername, MyTelegram.Schema.IUser>
+internal sealed class UpdateUsernameHandler(
+    ICommandBus commandBus,
+    IQueryProcessor queryProcessor,
+    IUserAppService userAppService,
+    IUsernameHelper usernameHelper,
+    IOptionsMonitor<MyTelegramMessengerServerOptions> options)
+    : RpcResultObjectHandler<MyTelegram.Schema.Account.RequestUpdateUsername, MyTelegram.Schema.IUser>
 {
     protected override async Task<IUser> HandleCoreAsync(IRequestInput input, MyTelegram.Schema.Account.RequestUpdateUsername obj)
     {
@@ -29,6 +35,18 @@ internal sealed class UpdateUsernameHandler(ICommandBus commandBus, IQueryProces
         if (string.Equals(obj.Username, oldUserName, StringComparison.OrdinalIgnoreCase))
         {
             RpcErrors.RpcErrors400.UsernameNotModified.ThrowRpcError();
+        }
+
+        if (!string.IsNullOrEmpty(oldUserName) &&
+            options.CurrentValue.ProtectedUsernames.Contains(oldUserName, StringComparer.OrdinalIgnoreCase))
+        {
+            RpcErrors.RpcErrors400.UsernamePurchaseAvailable.ThrowRpcError();
+        }
+
+        if (!string.IsNullOrEmpty(obj.Username) &&
+            options.CurrentValue.ProtectedUsernames.Contains(obj.Username, StringComparer.OrdinalIgnoreCase))
+        {
+            RpcErrors.RpcErrors400.UsernamePurchaseAvailable.ThrowRpcError();
         }
 
         // When clearing username (empty), use oldUserName as the aggregate ID to locate and delete the existing record.

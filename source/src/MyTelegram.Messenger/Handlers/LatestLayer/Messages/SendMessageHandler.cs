@@ -272,9 +272,9 @@ internal sealed class SendMessageHandler(IMessageAppService messageAppService, I
                                 Url = $"{joinChatDomain}/+{link}",
                                 DisplayUrl = $"{joinChatDomain}/+{link}",
                                 Type = channelReadModel.Broadcast ? "telegram_channel" : "telegram_megagroup",
-                                SiteName = "MyTelegram",
+                                SiteName = options.Value.Brand,
                                 Title = channelReadModel.Title,
-                                Description = $"Join this group on MyTelegram.",
+                                Description = $"Join this group on {options.Value.Brand}.",
                             }
                         };
                     }

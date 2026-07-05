@@ -24,25 +24,32 @@ public class UserDomainEventHandler(
             await _commandBus.PublishAsync(command, default);
         }
 
-        if (!domainEvent.AggregateEvent.Bot)
+        if (!options.CurrentValue.SendWelcomeMessageAfterUserSignIn || domainEvent.AggregateEvent.Bot)
         {
-            var welcomeMessage = "Welcome to Testgram (fork MyTelegram) 🎉\n\nYour account has been successfully created.\n\nRepository: https://github.com/glebxdlolreal/testgram";
-            var sendMessageInput = new SendMessageInput(
-                RequestInfo.Empty with
-                {
-                    UserId = MyTelegramConsts.NotificationServiceUserId,
-                    AuthKeyId = domainEvent.AggregateEvent.RequestInfo.AuthKeyId,
-                    PermAuthKeyId = domainEvent.AggregateEvent.RequestInfo.PermAuthKeyId,
-                    Date = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                    RequestId = Guid.NewGuid(),
-                    DeviceType = DeviceType.Desktop
-                },
-                MyTelegramConsts.NotificationServiceUserId,
-                new Peer(PeerType.User, domainEvent.AggregateEvent.UserId/*, domainEvent.AggregateEvent.AccessHash*/),
-                welcomeMessage,
-                randomHelper.NextInt64());
-
-            await messageAppService.SendMessageAsync([sendMessageInput]);
+            return;
         }
+
+        var welcomeMessage = options.CurrentValue.WelcomeMsg;
+        if (string.IsNullOrWhiteSpace(welcomeMessage))
+        {
+            return;
+        }
+
+        var sendMessageInput = new SendMessageInput(
+            RequestInfo.Empty with
+            {
+                UserId = MyTelegramConsts.NotificationServiceUserId,
+                AuthKeyId = domainEvent.AggregateEvent.RequestInfo.AuthKeyId,
+                PermAuthKeyId = domainEvent.AggregateEvent.RequestInfo.PermAuthKeyId,
+                Date = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                RequestId = Guid.NewGuid(),
+                DeviceType = DeviceType.Desktop
+            },
+            MyTelegramConsts.NotificationServiceUserId,
+            new Peer(PeerType.User, domainEvent.AggregateEvent.UserId),
+            welcomeMessage,
+            randomHelper.NextInt64());
+
+        await messageAppService.SendMessageAsync([sendMessageInput]);
     }
 }

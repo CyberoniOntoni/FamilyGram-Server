@@ -86,7 +86,7 @@ public class UserDataSeeder(
         var userId = MyTelegramConsts.DefaultSupportUserId;
         var created = await CreateUserIfNeededAsync(userId,
             MyTelegramConsts.DefaultSupportUserId.ToString(),
-            "Testgram Support",
+            $"{options.CurrentValue.Brand} Support",
             null,
             null,
             false);
@@ -98,7 +98,7 @@ public class UserDataSeeder(
 
             var setVerifiedCommand = new SetVerifiedCommand(UserId.Create(userId), true);
             await commandBus.PublishAsync(setVerifiedCommand);
-            logger.LogInformation("Testgram support user created successfully");
+            logger.LogInformation("{Brand} support user created successfully", options.CurrentValue.Brand);
         }
     }
 
@@ -114,7 +114,7 @@ public class UserDataSeeder(
         var userId = MyTelegramConsts.NotificationServiceUserId;
         var created = await CreateUserIfNeededAsync(userId,
             "42777",
-            "Testgram",
+            options.CurrentValue.Brand,
             null,
             null,
             false);
@@ -126,7 +126,7 @@ public class UserDataSeeder(
 
             var setVerifiedCommand = new SetVerifiedCommand(UserId.Create(userId), true);
             await commandBus.PublishAsync(setVerifiedCommand);
-            logger.LogInformation("Testgram notification user created successfully");
+            logger.LogInformation("{Brand} notification user created successfully", options.CurrentValue.Brand);
         }
 
         await UpdateServiceNotificationAccountBioAsync();

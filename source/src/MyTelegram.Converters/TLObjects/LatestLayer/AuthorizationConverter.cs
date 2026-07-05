@@ -1,4 +1,6 @@
-﻿using MyTelegram.Converters.Services.Interfaces;
+﻿using Microsoft.Extensions.Options;
+using MyTelegram.Converters.Services.Interfaces;
+using MyTelegram.Services;
 using MyTelegram.Schema.Auth;
 using MyTelegram.Schema.Help;
 using IAuthorization = MyTelegram.Schema.Auth.IAuthorization;
@@ -6,7 +8,10 @@ using TAuthorization = MyTelegram.Schema.Auth.TAuthorization;
 
 namespace MyTelegram.Converters.TLObjects.LatestLayer;
 
-internal sealed class AuthorizationConverter(IObjectMapper objectMapper, ISessionLocationResolver sessionLocationResolver) : IAuthorizationConverter, ITransientDependency
+internal sealed class AuthorizationConverter(
+    IObjectMapper objectMapper,
+    ISessionLocationResolver sessionLocationResolver,
+    IOptionsMonitor<AppBrandingOptions> options) : IAuthorizationConverter, ITransientDependency
 {
     
     public int Layer => Layers.LayerLatest;
@@ -26,7 +31,7 @@ internal sealed class AuthorizationConverter(IObjectMapper objectMapper, ISessio
                             "{\"country\":\"US\",\"min_age\":false,\"terms_key\":\"TERMS_OF_SERVICE\",\"terms_lang\":\"en\",\"terms_version\":1,\"terms_hash\":\"7dca806cb8d387c07c778ce9ef6aac04\"}"
                     },
                     Text =
-                        "By signing up for MyTelegram, you agree not to:\n\n- Use our service to send spam or scam users.\n- Promote violence on publicly viewable Telegram bots, groups or channels.\n- Post pornographic content on publicly viewable MyTelegram bots, groups or channels.\n\nWe reserve the right to update these Terms of Service later."
+                        $"By signing up for {options.CurrentValue.Brand}, you agree not to:\n\n- Use our service to send spam or scam users.\n- Promote violence on publicly viewable {options.CurrentValue.Brand} bots, groups or channels.\n- Post pornographic content on publicly viewable {options.CurrentValue.Brand} bots, groups or channels.\n\nWe reserve the right to update these Terms of Service later."
                 }
             };
         }
@@ -52,7 +57,7 @@ internal sealed class AuthorizationConverter(IObjectMapper objectMapper, ISessio
                         "{\"country\":\"US\",\"min_age\":false,\"terms_key\":\"TERMS_OF_SERVICE\",\"terms_lang\":\"en\",\"terms_version\":1,\"terms_hash\":\"7dca806cb8d387c07c778ce9ef6aac04\"}"
                 },
                 Text =
-                    "By signing up for MyTelegram, you agree not to:\n\n- Use our service to send spam or scam users.\n- Promote violence on publicly viewable Telegram bots, groups or channels.\n- Post pornographic content on publicly viewable MyTelegram bots, groups or channels.\n\nWe reserve the right to update these Terms of Service later."
+                    $"By signing up for {options.CurrentValue.Brand}, you agree not to:\n\n- Use our service to send spam or scam users.\n- Promote violence on publicly viewable {options.CurrentValue.Brand} bots, groups or channels.\n- Post pornographic content on publicly viewable {options.CurrentValue.Brand} bots, groups or channels.\n\nWe reserve the right to update these Terms of Service later."
             }
         };
     }
