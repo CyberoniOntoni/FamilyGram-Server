@@ -40,6 +40,10 @@
 
 ## Running Testgram Server
 
+### Full deployment guide (AcmeChat / Proxmox)
+
+See **[deploy/DEPLOYMENT-example.md](deploy/DEPLOYMENT-example.md)** for complete Proxmox, Cloudflare, NPM, secrets, bot, and client setup.
+
 ### Quick Start with Docker
 
 1. Get the Docker Compose setup. `docker-compose.yml` bind-mounts several helper scripts
