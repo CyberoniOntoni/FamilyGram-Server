@@ -7,11 +7,11 @@ Self-hosted [Testgram](https://github.com/CyberoniOntoni/testgram) on Proxmox fo
 | Item | Value |
 |------|-------|
 | Fork / repo | `https://github.com/CyberoniOntoni/testgram` (branch `dev`) |
-| Proxmox VM LAN IP | `192.168.1.79` |
-| Public WAN IP | `203.0.113.50` |
+| Proxmox VM LAN IP | `192.168.1.10` |
+| Public WAN IP | `123.123.123.123` |
 | Domain | `acmechat.example` |
 | Subdomain (passkey / NPM) | `tg.acmechat.example` |
-| NPM host | `192.168.1.67` |
+| NPM host | `192.168.1.11` |
 | Brand name | `AcmeChat` |
 | Docker images | `ghcr.io/cyberoniontoni/testgram/*` + `mytelegram/*` (session/file) |
 
@@ -25,9 +25,9 @@ Internet clients (Android / Desktop)
         │  MTProto TCP :20443, :20543, :20643, :20644
         │  WebRTC UDP/TCP :5348, :49152-49172
         ▼
-Router (port forward WAN → 192.168.1.79)
+Router (port forward WAN → 192.168.1.10)
         ▼
-Debian VM 192.168.1.79 (Docker Compose)
+Debian VM 192.168.1.10 (Docker Compose)
   ├── gateway-server      (MTProto entry)
   ├── auth/session/messenger/file/...
   ├── mongodb, redis, rabbitmq, minio
@@ -36,13 +36,13 @@ Debian VM 192.168.1.79 (Docker Compose)
   └── minio-proxy         (file download fix)
 
 Optional:
-  Cloudflare DNS-only: tg.acmechat.example → 203.0.113.50
-  NPM 192.168.1.67:443 → 192.168.1.79:30443 (passkey HTTPS only)
+  Cloudflare DNS-only: tg.acmechat.example → 123.123.123.123
+  NPM 192.168.1.11:443 → 192.168.1.10:30443 (passkey HTTPS only)
 ```
 
 ### IP vs domain policy
 
-| Use public IP `203.0.113.50` | Use domain `tg.acmechat.example` |
+| Use public IP `123.123.123.123` | Use domain `tg.acmechat.example` |
 |--------------------------------|---------------------------|
 | `App__DcOptions__*_IpAddress` (MTProto) | `App__PasskeyRpId` (WebAuthn) |
 | `App__WebRtcConnections__0__Ip` (Coturn) | NPM proxy host + Let's Encrypt |
@@ -50,7 +50,7 @@ Optional:
 
 **Do not** orange-cloud (proxy) MTProto ports in Cloudflare — it cannot pass raw MTProto TCP.
 
-**Do not** put the LAN IP `192.168.1.79` in `DcOptions` — remote clients cannot reach it.
+**Do not** put the LAN IP `192.168.1.10` in `DcOptions` — remote clients cannot reach it.
 
 ---
 
@@ -64,7 +64,7 @@ Optional:
 | vCPU | 4 |
 | RAM | 8 GB |
 | Disk | 80 GB |
-| Network | Static IP `192.168.1.79/24` |
+| Network | Static IP `192.168.1.10/24` |
 
 ### Accounts & services
 
@@ -72,9 +72,9 @@ Optional:
 - Telegram account + [@BotFather](https://t.me/BotFather) bot token
 - Cloudflare account with `acmechat.example` (free tier, optional but recommended for passkey)
 - Router admin access for port forwarding
-- (Optional) Nginx Proxy Manager at `192.168.1.67`
+- (Optional) Nginx Proxy Manager at `192.168.1.11`
 
-### Router port forwards → `192.168.1.79`
+### Router port forwards → `192.168.1.10`
 
 | WAN port | Protocol | Service |
 |----------|----------|---------|
@@ -96,7 +96,7 @@ Optional:
 2. Set static networking on the guest:
 
    ```text
-   Address:   192.168.1.79
+   Address:   192.168.1.10
    Netmask:   255.255.255.0
    Gateway:   192.168.1.1        # your LAN gateway
    DNS:       1.1.1.1 / 8.8.8.8
@@ -116,11 +116,11 @@ Used for **passkey (WebAuthn)** and human-readable HTTPS — not for MTProto rou
 
    | Type | Name | Content | Proxy |
    |------|------|---------|-------|
-   | A | `tg` | `203.0.113.50` | **DNS only** (grey cloud) |
+   | A | `tg` | `123.123.123.123` | **DNS only** (grey cloud) |
 
 3. Do **not** enable orange-cloud proxy on this record.
 
-If your WAN IP changes later, update this A record. Keep `203.0.113.50` in `.env` until you confirm clients work with a hostname (not recommended for MTProto initially).
+If your WAN IP changes later, update this A record. Keep `123.123.123.123` in `.env` until you confirm clients work with a hostname (not recommended for MTProto initially).
 
 ---
 
@@ -128,7 +128,7 @@ If your WAN IP changes later, update this A record. Keep `203.0.113.50` in `.env
 
 Only needed if you use **passkey login**. MTProto does not go through NPM.
 
-On NPM (`192.168.1.67`):
+On NPM (`192.168.1.11`):
 
 1. **Hosts → Proxy Hosts → Add**
 
@@ -136,16 +136,16 @@ On NPM (`192.168.1.67`):
    |-------|-------|
    | Domain names | `tg.acmechat.example` |
    | Scheme | `http` |
-   | Forward hostname | `192.168.1.79` |
+   | Forward hostname | `192.168.1.10` |
    | Forward port | `30443` |
    | Websockets | On |
    | Block common exploits | On |
 
 2. **SSL** tab → Request a new SSL certificate (Let's Encrypt) → Force SSL.
 
-3. Ensure port `30443` is forwarded on the router to `192.168.1.79` (or expose via NPM if NPM is your only public entry — for passkey, clients hit `tg.acmechat.example:443` on NPM which proxies to the VM).
+3. Ensure port `30443` is forwarded on the router to `192.168.1.10` (or expose via NPM if NPM is your only public entry — for passkey, clients hit `tg.acmechat.example:443` on NPM which proxies to the VM).
 
-> If NPM is the public HTTPS entry, you may forward WAN `443` → `192.168.1.67:443` instead of exposing `30443` directly.
+> If NPM is the public HTTPS entry, you may forward WAN `443` → `192.168.1.11:443` instead of exposing `30443` directly.
 
 ---
 
@@ -154,7 +154,7 @@ On NPM (`192.168.1.67`):
 SSH into the container:
 
 ```bash
-ssh root@192.168.1.79
+ssh root@192.168.1.10
 ```
 
 ### Interactive install (recommended)
@@ -171,8 +171,8 @@ Do **not** pipe to bash (`curl ... | bash`) — save the file first.
 ### Non-interactive (AcmeChat defaults)
 
 ```bash
-PUBLIC_IP=203.0.113.50 \
-LAN_IP=192.168.1.79 \
+PUBLIC_IP=123.123.123.123 \
+LAN_IP=192.168.1.10 \
 BRAND=AcmeChat \
 PASSKEY_DOMAIN=tg.acmechat.example \
 ENABLE_PASSKEY=yes \
@@ -289,8 +289,8 @@ Template: `docker/compose/.env.deployment.example` (already filled with your IPs
 ### Already correct (do not change unless your IP changes)
 
 ```bash
-App__DcOptions__*_IpAddress=203.0.113.50
-App__WebRtcConnections__0__Ip=203.0.113.50
+App__DcOptions__*_IpAddress=123.123.123.123
+App__WebRtcConnections__0__Ip=123.123.123.123
 App__PasskeyRpId=tg.acmechat.example
 App__Brand=AcmeChat
 App__Servers__0__Enabled=True
@@ -369,8 +369,8 @@ docker compose logs gateway-server | grep 20443
 From a machine **not** on `192.168.1.0/24`:
 
 ```bash
-nc -zv 203.0.113.50 20443
-nc -zv 203.0.113.50 20543
+nc -zv 123.123.123.123 20443
+nc -zv 123.123.123.123 20543
 ```
 
 If `Connection refused`, check router port forwards and VM firewall (`ufw status`).
@@ -384,11 +384,11 @@ Fork clients must point at your server IP at **build time**.
 | Platform | Repository |
 |----------|------------|
 | Android | https://github.com/glebxdlolreal/testgram-android |
-| Desktop | https://github.com/CyberoniOntoni/testgram-tdesktop (`dev` — AcmeChat IP pre-patched) |
+| Desktop | https://github.com/CyberoniOntoni/familygram-desktop (`dev` — AcmeChat IP pre-patched) |
 
 1. Clone the client repo (`dev` branch).
-2. **Desktop:** see [testgram-tdesktop/docs/BUILD-AcmeChat.md](https://github.com/CyberoniOntoni/testgram-tdesktop/blob/dev/docs/BUILD-AcmeChat.md) — verify `mtproto_dc_options.cpp` has `203.0.113.50` and ports `20443`/`20543`/`20643`.
-3. **Android:** search for `YOUR_SERVER_IP` and replace with **`203.0.113.50`** (public IP, not domain).
+2. **Desktop:** see [testgram-tdesktop/docs/BUILD-AcmeChat.md](https://github.com/CyberoniOntoni/familygram-desktop/blob/dev/docs/BUILD-AcmeChat.md) — verify `mtproto_dc_options.cpp` has `123.123.123.123` and ports `20443`/`20543`/`20643`.
+3. **Android:** search for `YOUR_SERVER_IP` and replace with **`123.123.123.123`** (public IP, not domain).
 4. Build and install the APK / desktop binary (Windows: Visual Studio + `prepare\win.bat` + `configure.bat x64` with your `api_id`/`api_hash` from [my.telegram.org](https://my.telegram.org/apps)).
 
 Official MyTelegram iOS/Web clients from `loyldg` may need separate RSA key / DC configuration — Android and TDesktop forks above are the documented path.
@@ -425,7 +425,7 @@ docker compose logs gateway-server | grep 20443
 
 **Cause:** Missing DC entries or dead ports.
 
-**Fix:** Ensure all four DcOptions IPs are `203.0.113.50` and ports `20443/20543/20643/20644` are forwarded and listening.
+**Fix:** Ensure all four DcOptions IPs are `123.123.123.123` and ports `20443/20543/20643/20644` are forwarded and listening.
 
 ### `Bucket name cannot be empty` / media won't load
 
@@ -457,7 +457,7 @@ docker compose up -d --force-recreate file-server
 ### Voice/video calls fail
 
 1. Confirm Coturn ports forwarded (`5348` TCP+UDP, `49152-49172/udp`).
-2. Confirm `.env` WebRTC IP is `203.0.113.50`.
+2. Confirm `.env` WebRTC IP is `123.123.123.123`.
 3. Credentials must match docker-compose coturn: `testgram` / `testgram2024`.
 
 ### Passkey login fails
