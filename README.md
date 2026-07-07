@@ -40,7 +40,9 @@
 
 ## Running Testgram Server
 
-### Full deployment guide (AcmeChat / Proxmox)
+### Full deployment guide (Proxmox example)
+
+See **[deploy/DEPLOYMENT-example.md](deploy/DEPLOYMENT-example.md)** for complete Proxmox, Cloudflare, NPM, secrets, bot, and client setup. Replace example IPs and domains with your own; keep production values in local `.env` only.
 
 Quick install (interactive Docker wizard, v3.1.2):
 
@@ -356,7 +358,7 @@ export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"
 | Platform | Repository |
 |----------|------------|
 | Android | https://github.com/glebxdlolreal/testgram-android |
-| Desktop (FamilyGram) | https://github.com/CyberoniOntoni/familygram-desktop |
+| Desktop (FamilyGram) | https://github.com/CyberoniOntoni/familygram-desktop — see [docs/BUILD-testgram.md](https://github.com/CyberoniOntoni/familygram-desktop/blob/main/docs/BUILD-testgram.md) |
 | iOS | https://github.com/loyldg/mytelegram-iOS |
 | WebK | https://github.com/loyldg/mytelegram-webk |
 | WebA | https://github.com/loyldg/mytelegram-weba |

@@ -1,4 +1,4 @@
-# AcmeChat Testgram — Complete Setup & Configuration Guide
+# Example Testgram Deployment — Complete Setup & Configuration Guide
 
 Self-hosted [Testgram](https://github.com/CyberoniOntoni/testgram) on Proxmox for **AcmeChat**, with internet access, Cloudflare DNS, and optional Nginx Proxy Manager (NPM).
 
@@ -273,7 +273,7 @@ Run once per `CHANGE_ME` field in `.env`.
 nano /opt/testgram/docker/compose/.env
 ```
 
-Template: `docker/compose/.env.acmechat.example.example` (already filled with your IPs and branding).
+Template: `docker/compose/.env.deployment.example` (already filled with your IPs and branding).
 
 ### Required edits
 
@@ -387,7 +387,7 @@ Fork clients must point at your server IP at **build time**.
 | Desktop | https://github.com/CyberoniOntoni/testgram-tdesktop (`dev` — AcmeChat IP pre-patched) |
 
 1. Clone the client repo (`dev` branch).
-2. **Desktop:** see [testgram-tdesktop/docs/BUILD-testgram.md](https://github.com/CyberoniOntoni/testgram-tdesktop/blob/dev/docs/BUILD-testgram.md) — verify `mtproto_dc_options.cpp` has `203.0.113.50` and ports `20443`/`20543`/`20643`.
+2. **Desktop:** see [testgram-tdesktop/docs/BUILD-AcmeChat.md](https://github.com/CyberoniOntoni/testgram-tdesktop/blob/dev/docs/BUILD-AcmeChat.md) — verify `mtproto_dc_options.cpp` has `203.0.113.50` and ports `20443`/`20543`/`20643`.
 3. **Android:** search for `YOUR_SERVER_IP` and replace with **`203.0.113.50`** (public IP, not domain).
 4. Build and install the APK / desktop binary (Windows: Visual Studio + `prepare\win.bat` + `configure.bat x64` with your `api_id`/`api_hash` from [my.telegram.org](https://my.telegram.org/apps)).
 
@@ -568,10 +568,10 @@ docker compose down -v
 | Path | Purpose |
 |------|---------|
 | `docker/compose/docker-compose.yml` | Full stack definition |
-| `docker/compose/.env.acmechat.example.example` | Your pre-filled deployment template |
+| `docker/compose/.env.deployment.example` | Your pre-filled deployment template |
 | `docker/compose/.env` | Live secrets (never commit) |
 | `deploy/setup-debian.sh` | VM bootstrap script |
-| `deploy/DEPLOYMENT-example.md` | This guide |
+| `deploy/DEPLOYMENT-AcmeChat.md` | This guide |
 | `.github/workflows/docker-build.yml` | CI → GHCR image builds |
 
 ---

@@ -384,3 +384,8 @@ scripts/stickers/
 .claude-flow/
 .swarm/
 .mcp.json
+
+# Local deployment config with real hosts/IPs (never commit)
+deploy/DEPLOYMENT.local.md
+docker/compose/.env.local
+*.local.md
