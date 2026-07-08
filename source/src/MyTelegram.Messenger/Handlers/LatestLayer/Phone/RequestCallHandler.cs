@@ -83,6 +83,7 @@ internal sealed class RequestCallHandler(
             CallerAccessHash = callerAccessHash,
             CalleeAccessHash = calleeAccessHash,
             CallerId = input.UserId,
+            CallerPermAuthKeyId = input.PermAuthKeyId,
             CalleeId = calleeId,
             RandomId = obj.RandomId,
             GAHash = obj.GAHash,

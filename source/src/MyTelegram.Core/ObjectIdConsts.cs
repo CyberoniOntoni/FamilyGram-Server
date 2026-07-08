@@ -24,7 +24,7 @@ public partial class ObjectIdConsts
     //0x63c66506
     public const uint MessagesGetMessagesId = 0x63c66506;
 
-    // CommandServerHandlers count=195
+    // CommandServerHandlers count=196
     public static readonly FrozenDictionary<uint, string> CommandServerHandlers = new Dictionary<uint, string>
     {
       { 0x3bd2b4a0, "AcceptCallHandler"},
@@ -129,6 +129,7 @@ public partial class ObjectIdConsts
       { 0x637ea878, "RegisterDeviceHandler"},
       { 0x3b1adf37, "ReorderPinnedDialogsHandler"},
       { 0x42ff96ed, "RequestCallHandler"},
+      { 0xff7a9383, "SendSignalingDataHandler"},
       { 0xf64daf43, "RequestEncryptionHandler"},
       { 0xd897bc66, "RequestPasswordRecoveryHandler"},
       { 0x7a7f2a15, "ResendPasswordEmailHandler"},

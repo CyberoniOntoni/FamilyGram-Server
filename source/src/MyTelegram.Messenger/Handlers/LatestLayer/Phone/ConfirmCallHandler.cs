@@ -138,16 +138,25 @@ internal sealed class ConfirmCallHandler(
 
         var updatePhoneCall = new MyTelegram.Schema.TUpdatePhoneCall { PhoneCall = phoneCallForCallee };
 
-        var otherUserId = input.UserId == session.CallerId ? session.CalleeId : session.CallerId;
-        var otherPeer = new Peer(PeerType.User, otherUserId);
-        await objectMessageSender.PushMessageToPeerAsync(otherPeer,
-            new TUpdates
-            {
-                Updates = new TVector<IUpdate> { updatePhoneCall },
-                Users = usersVector,
-                Chats = new TVector<IChat>(),
-                Date = currentDate
-            });
+        var calleePeer = new Peer(PeerType.User, session.CalleeId);
+        var calleeUpdates = new TUpdates
+        {
+            Updates = new TVector<IUpdate> { updatePhoneCall },
+            Users = usersVector,
+            Chats = new TVector<IChat>(),
+            Date = currentDate
+        };
+
+        await objectMessageSender.PushMessageToPeerAsync(
+            calleePeer,
+            calleeUpdates,
+            onlySendToUserId: session.CalleeId,
+            onlySendToThisAuthKeyId: session.CalleePermAuthKeyId > 0 ? session.CalleePermAuthKeyId : null);
+
+        if (session.CalleePermAuthKeyId > 0)
+        {
+            await objectMessageSender.PushSessionMessageToAuthKeyIdAsync(session.CalleePermAuthKeyId, calleeUpdates);
+        }
 
         return new MyTelegram.Schema.Phone.TPhoneCall
         {

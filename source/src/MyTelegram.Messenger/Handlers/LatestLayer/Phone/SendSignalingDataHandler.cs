@@ -53,6 +53,9 @@ internal sealed class SendSignalingDataHandler(
 
         var otherUserId = input.UserId == session.CallerId ? session.CalleeId : session.CallerId;
         var otherPeer = new Peer(PeerType.User, otherUserId);
+        var otherPermAuthKeyId = input.UserId == session.CallerId
+            ? session.CalleePermAuthKeyId
+            : session.CallerPermAuthKeyId;
 
         var currentDate = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var signalingDataUpdate = new MyTelegram.Schema.TUpdatePhoneCallSignalingData
@@ -61,14 +64,24 @@ internal sealed class SendSignalingDataHandler(
             Data = obj.Data
         };
 
-        await objectMessageSender.PushMessageToPeerAsync(otherPeer,
-            new TUpdates
-            {
-                Updates = new TVector<IUpdate> { signalingDataUpdate },
-                Users = new TVector<IUser>(),
-                Chats = new TVector<IChat>(),
-                Date = currentDate
-            });
+        var updates = new TUpdates
+        {
+            Updates = new TVector<IUpdate> { signalingDataUpdate },
+            Users = new TVector<IUser>(),
+            Chats = new TVector<IChat>(),
+            Date = currentDate
+        };
+
+        await objectMessageSender.PushMessageToPeerAsync(
+            otherPeer,
+            updates,
+            onlySendToUserId: otherUserId,
+            onlySendToThisAuthKeyId: otherPermAuthKeyId > 0 ? otherPermAuthKeyId : null);
+
+        if (otherPermAuthKeyId > 0)
+        {
+            await objectMessageSender.PushSessionMessageToAuthKeyIdAsync(otherPermAuthKeyId, updates);
+        }
 
         return new TBoolTrue();
     }

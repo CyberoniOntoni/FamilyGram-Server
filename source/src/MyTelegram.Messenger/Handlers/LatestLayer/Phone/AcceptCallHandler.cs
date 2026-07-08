@@ -61,6 +61,7 @@ internal sealed class AcceptCallHandler(
         var update = Builders<CallSessionDocument>.Update
             .Set(s => s.GB, obj.GB)
             .Set(s => s.CalleeLibraryVersions, [.. PhoneCallProtocolHelper.GetLibraryVersions(obj.Protocol)])
+            .Set(s => s.CalleePermAuthKeyId, input.PermAuthKeyId)
             .Set(s => s.State, "accepted");
 
         await _callCollection.UpdateOneAsync(filter, update);
@@ -85,14 +86,24 @@ internal sealed class AcceptCallHandler(
         var updatePhoneCall = new MyTelegram.Schema.TUpdatePhoneCall { PhoneCall = phoneCallAcceptedForCaller };
 
         var callerPeer = new Peer(PeerType.User, session.CallerId);
-        await objectMessageSender.PushMessageToPeerAsync(callerPeer,
-            new TUpdates
-            {
-                Updates = new TVector<IUpdate> { updatePhoneCall },
-                Users = usersVector,
-                Chats = new TVector<IChat>(),
-                Date = currentDate
-            });
+        var callerUpdates = new TUpdates
+        {
+            Updates = new TVector<IUpdate> { updatePhoneCall },
+            Users = usersVector,
+            Chats = new TVector<IChat>(),
+            Date = currentDate
+        };
+
+        await objectMessageSender.PushMessageToPeerAsync(
+            callerPeer,
+            callerUpdates,
+            onlySendToUserId: session.CallerId,
+            onlySendToThisAuthKeyId: session.CallerPermAuthKeyId > 0 ? session.CallerPermAuthKeyId : null);
+
+        if (session.CallerPermAuthKeyId > 0)
+        {
+            await objectMessageSender.PushSessionMessageToAuthKeyIdAsync(session.CallerPermAuthKeyId, callerUpdates);
+        }
 
         await SendCallAcceptedServiceMessageAsync(input, session.CallId, session.CallerId, session.Video);
 

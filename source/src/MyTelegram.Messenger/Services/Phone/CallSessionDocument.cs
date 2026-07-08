@@ -8,7 +8,9 @@ public class CallSessionDocument
     public long CallerAccessHash { get; set; }
     public long CalleeAccessHash { get; set; }
     public long CallerId { get; set; }
+    public long CallerPermAuthKeyId { get; set; }
     public long CalleeId { get; set; }
+    public long CalleePermAuthKeyId { get; set; }
     public int RandomId { get; set; }
     public byte[]? GAHash { get; set; }
     public byte[]? GA { get; set; }
