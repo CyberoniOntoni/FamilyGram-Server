@@ -359,7 +359,8 @@ export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"
 |----------|------------|
 | Android | https://github.com/glebxdlolreal/testgram-android |
 | Desktop (FamilyGram) | https://github.com/CyberoniOntoni/familygram-desktop — see [docs/BUILD-testgram.md](https://github.com/CyberoniOntoni/familygram-desktop/blob/main/docs/BUILD-testgram.md) |
-| **Web (FamilyGram)** | **https://github.com/CyberoniOntoni/familygram-web** — telegram-tt fork with Testgram layer-224 compatibility (login, chats, messaging, calls) |
+| **Web + Server (FamilyGram)** | **https://github.com/CyberoniOntoni/familygram** — unified Docker stack (recommended) |
+| Web source only | https://github.com/CyberoniOntoni/familygram-web — telegram-tt fork |
 | iOS | https://github.com/loyldg/mytelegram-iOS |
 | WebK | https://github.com/loyldg/mytelegram-webk |
 | WebA | https://github.com/loyldg/mytelegram-weba (legacy; superseded by familygram-web for Testgram) |
