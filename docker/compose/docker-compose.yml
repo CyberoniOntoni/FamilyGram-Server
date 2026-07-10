@@ -119,16 +119,20 @@ services:
       - ./data/coturn:/var/lib/coturn
     command: >
       --verbose
-      --external-ip ${App__WebRtcConnections__0__Ip:-127.0.0.1}
-      --realm testgram
-      --server-name testgram
-      --listening-port 5348
-      --min-port 49152
-      --max-port 49172
+      --listening-ip=0.0.0.0
+      --relay-ip=0.0.0.0
+      --external-ip=${COTURN_EXTERNAL_IP:-${App__WebRtcConnections__0__Ip:-127.0.0.1}}
+      --realm=testgram
+      --server-name=testgram
+      --listening-port=5348
+      --min-port=49152
+      --max-port=49172
       --fingerprint
       --lt-cred-mech
-      --user testgram:testgram2024
-      --log-file stdout
+      --no-tls
+      --no-dtls
+      --user=${App__WebRtcConnections__0__UserName:-testgram}:${App__WebRtcConnections__0__Password:-testgram2024}
+      --log-file=stdout
 
   ### RTMP server for group calls and live stories
   rtmp-server:

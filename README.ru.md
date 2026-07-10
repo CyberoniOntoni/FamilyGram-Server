@@ -250,7 +250,8 @@ export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"
 | Платформа | Репозиторий |
 |-----------|-------------|
 | Android | https://github.com/glebxdlolreal/testgram-android |
-| Desktop (TDesktop) | https://github.com/glebxdlolreal/testgram-tdesktop |
+| Desktop (FamilyGram) | https://github.com/CyberoniOntoni/familygram-desktop |
+| **Web (FamilyGram)** | **https://github.com/CyberoniOntoni/familygram-web** |
 | iOS | https://github.com/loyldg/mytelegram-iOS |
 | WebK | https://github.com/loyldg/mytelegram-webk |
 | WebA | https://github.com/loyldg/mytelegram-weba |
