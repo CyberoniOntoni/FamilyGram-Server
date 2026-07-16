@@ -15,4 +15,5 @@ public static class DataSeederConsts
     public const string StickerSetRootFolder = "stickersets";
     public const string LanguagePacksRootFolder = "langpacks";
     public const string RussianAndroidLangPackFileName = "langpacks/ru/android.json";
+    public const string EnglishAndroidLangPackFileName = "langpacks/en/android.json";
 }

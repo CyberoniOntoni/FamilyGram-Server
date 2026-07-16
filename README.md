@@ -206,7 +206,7 @@ docker compose restart data-seeder
 docker compose logs data-seeder | tail -20   # expect: "All data created"
 ```
 
-### `data-seeder` — `Russian language pack file is missing`
+### `data-seeder` — language pack file is missing
 
 The host bind-mount hides language packs baked into the image. Copy them once:
 
@@ -219,7 +219,12 @@ chmod -R a+w data/mytelegram/data-seeder/downloads
 docker compose restart data-seeder messenger-query-server
 ```
 
-Or copy from the repo: `source/src/MyTelegram.DataSeeder/downloads/langpacks/ru/android.json` into `data/mytelegram/data-seeder/downloads/langpacks/ru/`.
+Or copy from the repo:
+
+- `source/src/MyTelegram.DataSeeder/downloads/langpacks/ru/android.json` → `data/.../langpacks/ru/`
+- `source/src/MyTelegram.DataSeeder/downloads/langpacks/en/android.json` → `data/.../langpacks/en/` (required for complete **English** UI in FamilyGram Web)
+
+The data-seeder imports **both** Russian and English Android packs into MongoDB for all platforms including `weba`. If English menus show untranslated keys, ensure `en/android.json` is present and restart `data-seeder` + `messenger-query-server`.
 
 ### Clients get `ConnectionRefusedError` (connection to server fails)
 
