@@ -55,10 +55,9 @@ internal sealed class RequestCallHandler(
             return null!;
         }
 
-        var busyFilter = Builders<CallSessionDocument>.Filter.And(
-            Builders<CallSessionDocument>.Filter.Eq(s => s.CalleeId, calleeId),
-            Builders<CallSessionDocument>.Filter.In(s => s.State, ["received", "accepted", "confirmed"]));
-        if (await _callCollection.Find(busyFilter).AnyAsync())
+        await CallSessionMaintenanceHelper.ExpireStaleSessionsAsync(_callCollection);
+
+        if (await _callCollection.Find(CallSessionMaintenanceHelper.BuildCalleeBusyFilter(calleeId)).AnyAsync())
         {
             RpcErrors.RpcErrors400.CallOccupyFailed.ThrowRpcError();
             return null!;
