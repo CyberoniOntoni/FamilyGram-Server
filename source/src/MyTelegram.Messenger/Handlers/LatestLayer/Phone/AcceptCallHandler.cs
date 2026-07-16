@@ -100,11 +100,6 @@ internal sealed class AcceptCallHandler(
             onlySendToUserId: session.CallerId,
             onlySendToThisAuthKeyId: session.CallerPermAuthKeyId > 0 ? session.CallerPermAuthKeyId : null);
 
-        if (session.CallerPermAuthKeyId > 0)
-        {
-            await objectMessageSender.PushSessionMessageToAuthKeyIdAsync(session.CallerPermAuthKeyId, callerUpdates);
-        }
-
         await SendCallAcceptedServiceMessageAsync(input, session.CallId, session.CallerId, session.Video);
 
         return new MyTelegram.Schema.Phone.TPhoneCall

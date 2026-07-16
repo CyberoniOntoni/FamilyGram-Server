@@ -49,7 +49,7 @@ internal sealed class ConfirmCallHandler(
             return null!;
         }
 
-        if (session.State != "accepted")
+        if (session.State != "accepted" && session.State != "confirmed")
         {
             RpcErrors.RpcErrors400.CallPeerInvalid.ThrowRpcError();
             return null!;
@@ -61,14 +61,23 @@ internal sealed class ConfirmCallHandler(
             return null!;
         }
 
-        var update = Builders<CallSessionDocument>.Update
-            .Set(s => s.GA, obj.GA)
-            .Set(s => s.KeyFingerprint, obj.KeyFingerprint)
-            .Set(s => s.State, "confirmed");
-
-        await _callCollection.UpdateOneAsync(filter, update);
-
+        var isFirstConfirm = session.State == "accepted";
         var currentDate = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var keyFingerprint = session.KeyFingerprint != 0 ? session.KeyFingerprint : obj.KeyFingerprint;
+
+        if (isFirstConfirm)
+        {
+            var update = Builders<CallSessionDocument>.Update
+                .Set(s => s.GA, obj.GA)
+                .Set(s => s.KeyFingerprint, obj.KeyFingerprint)
+                .Set(s => s.State, "confirmed");
+
+            await _callCollection.UpdateOneAsync(filter, update);
+            session.GA = obj.GA;
+            session.KeyFingerprint = obj.KeyFingerprint;
+            session.State = "confirmed";
+            keyFingerprint = obj.KeyFingerprint;
+        }
 
         var connections = new TVector<MyTelegram.Schema.IPhoneConnection>();
         var webRtcConnections = optionsAccessor.Value.WebRtcConnections;
@@ -120,15 +129,15 @@ internal sealed class ConfirmCallHandler(
             session,
             session.GetAccessHashForUser(session.CallerId),
             session.GB,
-            obj.KeyFingerprint,
+            keyFingerprint,
             protocol,
             currentDate,
             connections);
         var phoneCallForCallee = CreatePhoneCall(
             session,
             session.GetAccessHashForUser(session.CalleeId),
-            obj.GA,
-            obj.KeyFingerprint,
+            session.GA ?? obj.GA,
+            keyFingerprint,
             protocol,
             currentDate,
             connections);
@@ -147,15 +156,13 @@ internal sealed class ConfirmCallHandler(
             Date = currentDate
         };
 
-        await objectMessageSender.PushMessageToPeerAsync(
-            calleePeer,
-            calleeUpdates,
-            onlySendToUserId: session.CalleeId,
-            onlySendToThisAuthKeyId: session.CalleePermAuthKeyId > 0 ? session.CalleePermAuthKeyId : null);
-
-        if (session.CalleePermAuthKeyId > 0)
+        if (isFirstConfirm)
         {
-            await objectMessageSender.PushSessionMessageToAuthKeyIdAsync(session.CalleePermAuthKeyId, calleeUpdates);
+            await objectMessageSender.PushMessageToPeerAsync(
+                calleePeer,
+                calleeUpdates,
+                onlySendToUserId: session.CalleeId,
+                onlySendToThisAuthKeyId: session.CalleePermAuthKeyId > 0 ? session.CalleePermAuthKeyId : null);
         }
 
         return new MyTelegram.Schema.Phone.TPhoneCall

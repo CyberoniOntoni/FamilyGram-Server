@@ -78,11 +78,6 @@ internal sealed class SendSignalingDataHandler(
             onlySendToUserId: otherUserId,
             onlySendToThisAuthKeyId: otherPermAuthKeyId > 0 ? otherPermAuthKeyId : null);
 
-        if (otherPermAuthKeyId > 0)
-        {
-            await objectMessageSender.PushSessionMessageToAuthKeyIdAsync(otherPermAuthKeyId, updates);
-        }
-
         return new TBoolTrue();
     }
 }
