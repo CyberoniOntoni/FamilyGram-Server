@@ -4,8 +4,8 @@ namespace MyTelegram.Messenger;
 #nullable disable
 public class MyTelegramMessengerServerOptions
 {
-    public string Brand { get; set; } = "Testgram";
-    public string WelcomeMsg { get; set; } = "Welcome to Testgram! Your account has been created.";
+    public string Brand { get; set; } = "FamilyGram";
+    public string WelcomeMsg { get; set; } = "Welcome to FamilyGram! Your account has been created.";
     public List<string> ProtectedUsernames { get; set; } = [];
     public string FileServerGrpcServiceUrl { get; set; }
 

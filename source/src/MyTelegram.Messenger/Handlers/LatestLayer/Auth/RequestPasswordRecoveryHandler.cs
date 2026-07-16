@@ -17,7 +17,7 @@ internal sealed class RequestPasswordRecoveryHandler(ITwoFactorService twoFactor
 
         var recoveryCode = Random.Shared.Next(100000, 999999).ToString();
         await twoFactorService.SetRecoveryEmailAsync(input.UserId, passwordDoc.RecoveryEmail, recoveryCode);
-        await emailSender.SendVerificationCodeAsync(passwordDoc.RecoveryEmail, "Testgram Password Recovery", recoveryCode, "Your password recovery code is:");
+        await emailSender.SendVerificationCodeAsync(passwordDoc.RecoveryEmail, "FamilyGram Password Recovery", recoveryCode, "Your password recovery code is:");
 
         return new TPasswordRecovery { EmailPattern = twoFactorService.GetRecoveryEmailPattern(passwordDoc.RecoveryEmail) ?? passwordDoc.RecoveryEmail };
     }

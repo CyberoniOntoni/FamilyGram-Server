@@ -92,7 +92,7 @@ internal sealed class SendVerifyPhoneCodeHandler(
     private static async Task SendSmsAsync(string phoneNumber, string code, TelegramBotSmsOptions options)
     {
         using var client = new HttpClient();
-        var message = $"Your Testgram verification code is: {code}";
+        var message = $"Your FamilyGram verification code is: {code}";
 
         var payload = new
         {

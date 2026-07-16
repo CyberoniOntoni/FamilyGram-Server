@@ -397,7 +397,7 @@ User links phone  →  Telegram app  →  @YourBot  →  /start  (via Telegram c
 1. Create a bot in [@BotFather](https://t.me/BotFather) → `/newbot` → copy the token.
 2. Set `BOT_TOKEN=...` in `docker/compose/.env` (or pass it to `deploy/install.sh`).
 3. After the stack is up, each user opens **your** bot in Telegram → `/start` → links their phone number.
-4. On Testgram client login with that number, the code arrives in the bot chat.
+4. On FamilyGram client login with that number, the code arrives in the bot chat.
 
 `sms-sender` can optionally also consume `AppCodeCreatedIntegrationEvent` from RabbitMQ
 (`ENABLE_RABBITMQ_CONSUMER=true` in the bot service).

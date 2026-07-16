@@ -15,7 +15,7 @@ if (existing) {
     print("Creating Telegram service user...");
     users.insertOne({
         "_id": "user-service-telegram",
-        "About": "Testgram service notifications",
+        "About": "FamilyGram service notifications",
         "AccessHash": Long(Math.floor(Math.random() * 9007199254740991)),
         "AccountTtl": 365,
         "Birthday": null,

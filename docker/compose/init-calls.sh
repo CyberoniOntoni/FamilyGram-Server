@@ -3,7 +3,7 @@
 set -e
 
 echo "========================================="
-echo "Testgram Call System Setup"
+echo "FamilyGram Call System Setup"
 echo "========================================="
 
 # Wait for MongoDB

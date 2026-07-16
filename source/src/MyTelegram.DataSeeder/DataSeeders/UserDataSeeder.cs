@@ -137,7 +137,7 @@ public class UserDataSeeder(
         var config = await dataSeederHelper.LoadDataSeederConfigAsync();
         if (!config.IsServiceNotificationAccountBioUpdated)
         {
-            await UpdateUserBioAsync(MyTelegramConsts.NotificationServiceUserId, "Testgram — fork of MyTelegram open-source project.\nRepository: https://github.com/glebxdlolreal/testgram");
+            await UpdateUserBioAsync(MyTelegramConsts.NotificationServiceUserId, "FamilyGram — self-hosted messaging powered by MyTelegram.\nRepository: https://github.com/CyberoniOntoni/FamilyGram-Server");
             config.IsServiceNotificationAccountBioUpdated = true;
             await dataSeederHelper.SaveDataSeederConfigAsync();
         }

@@ -24,7 +24,7 @@ public class AppCodeEventHandler(
         try
         {
             var smsSender = smsSenderFactory.Create(eventData.PhoneNumber);
-            var brand = options.CurrentValue.Brand ?? "Testgram";
+            var brand = options.CurrentValue.Brand ?? "FamilyGram";
             await smsSender.SendAsync(phoneNumber, $"{brand} code: {eventData.Code}");
         }
         catch (Exception ex)

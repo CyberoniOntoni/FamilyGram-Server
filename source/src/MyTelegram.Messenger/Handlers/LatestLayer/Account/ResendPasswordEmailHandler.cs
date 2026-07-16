@@ -24,7 +24,7 @@ internal sealed class ResendPasswordEmailHandler(ITwoFactorService twoFactorServ
         var code = RandomNumberGenerator.GetBytes(4);
         var codeString = BitConverter.ToString(code).Replace("-", "").Substring(0, 6);
         await twoFactorService.SetRecoveryEmailAsync(input.UserId, doc.RecoveryEmail, codeString);
-        await emailSender.SendVerificationCodeAsync(doc.RecoveryEmail, "Testgram Recovery Email Confirmation", codeString);
+        await emailSender.SendVerificationCodeAsync(doc.RecoveryEmail, "FamilyGram Recovery Email Confirmation", codeString);
         return new MyTelegram.Schema.TBoolTrue();
     }
 }

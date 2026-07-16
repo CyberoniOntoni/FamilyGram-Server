@@ -56,7 +56,7 @@ internal sealed class SendVerifyEmailCodeHandler(
 
         await collection.InsertOneAsync(doc);
 
-        await emailSender.SendVerificationCodeAsync(obj.Email, "Testgram Email Verification", code);
+        await emailSender.SendVerificationCodeAsync(obj.Email, "FamilyGram Email Verification", code);
 
         return new TSentEmailCode
         {

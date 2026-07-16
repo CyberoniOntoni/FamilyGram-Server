@@ -51,7 +51,7 @@ internal sealed class UpdatePasswordSettingsHandler(ITwoFactorService twoFactorS
             var code = RandomNumberGenerator.GetBytes(4);
             var codeString = BitConverter.ToString(code).Replace("-", "").Substring(0, 6);
             await twoFactorService.SetRecoveryEmailAsync(input.UserId, settings.Email, codeString);
-            await emailSender.SendVerificationCodeAsync(settings.Email, "Testgram Recovery Email Confirmation", codeString);
+            await emailSender.SendVerificationCodeAsync(settings.Email, "FamilyGram Recovery Email Confirmation", codeString);
             RpcErrors.RpcErrors400.EmailUnconfirmedX.ThrowRpcError(codeString.Length);
         }
 

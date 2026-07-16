@@ -8,7 +8,7 @@ MONGO_URL=${ConnectionStrings__Default:-"mongodb://mongodb:27017"}
 DATABASE=${App__DatabaseName:-"tg"}
 
 echo "========================================="
-echo "Testgram Call System Auto-Setup"
+echo "FamilyGram Call System Auto-Setup"
 echo "========================================="
 echo ""
 
