@@ -1,4 +1,4 @@
-# Shared helpers for Testgram Docker installers.
+# Shared helpers for FamilyGram-Server Docker installers.
 # Sourced by deploy/install.sh — do not execute directly.
 
 installer_lib_init() {
@@ -244,7 +244,7 @@ setup_interactive_stdin() {
 Do NOT pipe this script (curl ... | bash) — that steals stdin and skips prompts.
 
 Instead:
-  curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/install.sh -o install.sh
+  curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/dev/deploy/install.sh -o install.sh
   bash install.sh
 
 Or pass all values explicitly:
@@ -428,7 +428,7 @@ ensure_compose() {
 }
 
 clone_or_update_repo() {
-  log "Cloning or updating Testgram (${REPO_BRANCH}) → ${INSTALL_DIR}"
+  log "Cloning or updating FamilyGram Server (${REPO_BRANCH}) → ${INSTALL_DIR}"
   if [[ -d "${INSTALL_DIR}/.git" ]]; then
     git -C "${INSTALL_DIR}" fetch origin
     git -C "${INSTALL_DIR}" checkout "${REPO_BRANCH}"
@@ -528,7 +528,7 @@ save_install_summary() {
   SUMMARY_FILE="${INSTALL_DIR}/deploy/last-install-config.txt"
   mkdir -p "${INSTALL_DIR}/deploy"
   cat > "${SUMMARY_FILE}" <<EOF
-# Testgram install config — $(date -Iseconds)
+# FamilyGram Server install config — $(date -Iseconds)
 INSTALLER_VERSION=${INSTALLER_VERSION}
 PUBLIC_IP=${PUBLIC_IP}
 LAN_IP=${LAN_IP}
@@ -562,14 +562,14 @@ configure_firewall() {
   fi
   log "Configuring UFW..."
   ufw allow 22/tcp comment 'SSH' >/dev/null 2>&1 || true
-  ufw allow "${PORT_MT1},${PORT_MT2},${PORT_MT3},${PORT_MT4}/tcp" comment 'Testgram MTProto' >/dev/null 2>&1 || true
-  ufw allow "${PORT_HTTPS},${PORT_HTTPS_ALT}/tcp" comment 'Testgram HTTPS' >/dev/null 2>&1 || true
-  ufw allow "${PORT_STUN}/tcp" comment 'Testgram STUN/TURN' >/dev/null 2>&1 || true
-  ufw allow "${PORT_STUN}/udp" comment 'Testgram STUN/TURN' >/dev/null 2>&1 || true
-  ufw allow "${PORT_RELAY_MIN}:${PORT_RELAY_MAX}/udp" comment 'Testgram TURN relay' >/dev/null 2>&1 || true
+  ufw allow "${PORT_MT1},${PORT_MT2},${PORT_MT3},${PORT_MT4}/tcp" comment 'FamilyGram Server MTProto' >/dev/null 2>&1 || true
+  ufw allow "${PORT_HTTPS},${PORT_HTTPS_ALT}/tcp" comment 'FamilyGram Server HTTPS' >/dev/null 2>&1 || true
+  ufw allow "${PORT_STUN}/tcp" comment 'FamilyGram Server STUN/TURN' >/dev/null 2>&1 || true
+  ufw allow "${PORT_STUN}/udp" comment 'FamilyGram Server STUN/TURN' >/dev/null 2>&1 || true
+  ufw allow "${PORT_RELAY_MIN}:${PORT_RELAY_MAX}/udp" comment 'FamilyGram Server TURN relay' >/dev/null 2>&1 || true
   if [[ "${ENABLE_RTMP}" == "yes" ]]; then
-    ufw allow "${PORT_RTMP}/tcp" comment 'Testgram RTMP' >/dev/null 2>&1 || true
-    ufw allow "${PORT_RTMP_HLS}/tcp" comment 'Testgram RTMP HLS' >/dev/null 2>&1 || true
+    ufw allow "${PORT_RTMP}/tcp" comment 'FamilyGram Server RTMP' >/dev/null 2>&1 || true
+    ufw allow "${PORT_RTMP_HLS}/tcp" comment 'FamilyGram Server RTMP HLS' >/dev/null 2>&1 || true
   fi
   ufw --force enable
 }
@@ -606,7 +606,7 @@ print_port_forwards() {
       "  • DNS A: ${PASSKEY_DOMAIN} → ${PUBLIC_IP} (grey cloud / DNS only)" \
       "  • Proxy ${PASSKEY_DOMAIN}:443 → ${LAN_IP}:${PORT_HTTPS}"
   fi
-  ui_printf '\n%sGHCR:%s github.com/CyberoniOntoni/testgram/packages must be public, or run docker login ghcr.io\n' \
+  ui_printf '\n%sGHCR:%s github.com/CyberoniOntoni/FamilyGram-Server/packages must be public, or run docker login ghcr.io\n' \
     "${C_BOLD}" "${C_RESET}"
 }
 
@@ -638,7 +638,7 @@ start_stack() {
   log "Pulling Docker images (first run may take several minutes)..."
   docker compose pull
 
-  log "Starting Testgram stack..."
+  log "Starting FamilyGram Server stack..."
   docker compose up -d
 
   log "Waiting for gateway-server (up to 120s)..."
@@ -712,7 +712,7 @@ run_install_wizard() {
   show_detected_ips "$detected_lan" "$detected_public"
   prompt PUBLIC_IP "Public WAN IP" "" is_ipv4
   prompt LAN_IP "LAN IP of this host" "" is_ipv4
-  prompt BRAND "Brand / app name" "Testgram"
+  prompt BRAND "Brand / app name" "FamilyGram"
   prompt_yes_no ENABLE_PASSKEY "Enable passkey (WebAuthn)? Needs HTTPS + domain" "no"
   if [[ "${ENABLE_PASSKEY}" == "yes" ]]; then
     prompt PASSKEY_DOMAIN "Passkey domain (e.g. tg.example.com)" "" is_domain
@@ -722,7 +722,7 @@ run_install_wizard() {
 
   step 4 "$total_steps" "Ports"
   ui_printf '%s\n' "Port notation: number(PROTO) — TCP, UDP, or TCP&UDP (both protocols on same port)."
-  prompt_yes_no CUSTOMIZE_PORTS "Customize service ports? (No = use Testgram defaults)" "no"
+  prompt_yes_no CUSTOMIZE_PORTS "Customize service ports? (No = use FamilyGram Server defaults)" "no"
   if [[ "${CUSTOMIZE_PORTS}" == "yes" ]]; then
     prompt PORT_MT1 "MTProto DC1 (main) — TCP only" "$PORT_MT1" is_port
     prompt PORT_MT2 "MTProto DC2 — TCP only" "$PORT_MT2" is_port
@@ -798,7 +798,7 @@ run_install_apply() {
     fi
   fi
 
-  ui_printf '\n%sDone — Testgram Docker stack is ready%s\n\n' "${C_GREEN}${C_BOLD}" "${C_RESET}"
+  ui_printf '\n%sDone — FamilyGram Server Docker stack is ready%s\n\n' "${C_GREEN}${C_BOLD}" "${C_RESET}"
   ui_printf '  .env:      %s/.env\n' "${COMPOSE_DIR}"
   ui_printf '  Summary:   %s\n' "${SUMMARY_FILE}"
   ui_printf '  Logs:      cd %s && docker compose logs -f\n' "${COMPOSE_DIR}"

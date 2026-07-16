@@ -1,10 +1,10 @@
-# Testgram
+# FamilyGram-Server
 
 [![API Layer](https://img.shields.io/badge/API_Layer-224-blueviolet)](https://corefork.telegram.org/methods)
 [![MTProto](https://img.shields.io/badge/MTProto_Protocol-2.0-green)](https://corefork.telegram.org/mtproto/)
 [![Fork](https://img.shields.io/badge/fork-loyldg%2Fmytelegram-blue)](https://github.com/loyldg/mytelegram)
 
-**Testgram** is a fork of [MyTelegram](https://github.com/loyldg/mytelegram) — a self-hosted C# implementation of the Telegram server-side API.
+**FamilyGram-Server** is the MTProto backend for [FamilyGram](https://github.com/CyberoniOntoni/familygram) — a fork of [MyTelegram](https://github.com/loyldg/mytelegram), a self-hosted C# implementation of the Telegram server-side API. (This repo was formerly named **Testgram**.)
 
 ## Supported Features
 
@@ -38,7 +38,7 @@
 
 ---
 
-## Running Testgram Server
+## Running FamilyGram Server
 
 ### Full deployment guide (Proxmox example)
 
@@ -48,16 +48,16 @@ Quick install (interactive Docker wizard, v3.1.2):
 
 ```bash
 # Prefer cloning — installer needs deploy/lib/installer-lib.sh
-git clone --branch dev https://github.com/CyberoniOntoni/testgram.git /opt/testgram
-cd /opt/testgram
+git clone --branch dev https://github.com/CyberoniOntoni/FamilyGram-Server.git /opt/familygram-server
+cd /opt/familygram-server
 bash deploy/install.sh          # use ssh -t if prompts don't echo input
 ```
 
 Or download the script pair:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/install.sh -o install.sh
-curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/lib/installer-lib.sh -o installer-lib.sh
+curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/dev/deploy/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/dev/deploy/lib/installer-lib.sh -o installer-lib.sh
 sudo bash install.sh
 ```
 
@@ -109,8 +109,8 @@ MTProto must go **direct** to your public IP — not through Cloudflare orange-c
    so clone the repo rather than downloading `docker-compose.yml` on its own:
 
 ```bash
-git clone --depth 1 https://github.com/CyberoniOntoni/testgram.git
-cd testgram/docker/compose
+git clone --depth 1 https://github.com/CyberoniOntoni/FamilyGram-Server.git
+cd familygram-server/docker/compose
 cp .env.example .env
 ```
 
@@ -212,7 +212,7 @@ The host bind-mount hides language packs baked into the image. Copy them once:
 
 ```bash
 cd docker/compose
-cid=$(docker create ghcr.io/cyberoniontoni/testgram/mytelegram-data-seeder:latest)
+cid=$(docker create ghcr.io/cyberoniontoni/familygram-server/mytelegram-data-seeder:latest)
 docker cp "$cid:/app/downloads/langpacks" ./data/mytelegram/data-seeder/downloads/
 docker rm "$cid"
 chmod -R a+w data/mytelegram/data-seeder/downloads
@@ -320,22 +320,22 @@ docker compose up -d --force-recreate file-server
 
 [`.github/workflows/docker-build.yml`](.github/workflows/docker-build.yml) builds the six .NET services this fork
 carries source for — `messenger-command-server`, `messenger-query-server`, `gateway-server`, `auth-server`,
-`sms-sender`, `data-seeder` — plus the Python verification bot (`testgram-bot`), and pushes them to GHCR on every
+`sms-sender`, `data-seeder` — plus the Python verification bot (`familygram-server-bot`), and pushes them to GHCR on every
 push to `dev` and on `v*.*.*` tags (pull requests build but don't push). Images are published as:
 
 ```
-ghcr.io/CyberoniOntoni/testgram/<service-name>:latest
-ghcr.io/CyberoniOntoni/testgram/<service-name>:<version>   # from build/version.txt
-ghcr.io/CyberoniOntoni/testgram/<service-name>:<git-sha>
+ghcr.io/CyberoniOntoni/FamilyGram-Server/<service-name>:latest
+ghcr.io/CyberoniOntoni/FamilyGram-Server/<service-name>:<version>   # from build/version.txt
+ghcr.io/CyberoniOntoni/FamilyGram-Server/<service-name>:<git-sha>
 ```
 
-`docker-compose.yml` already points at these images through `TestgramRegistry`/`TestgramVersion` in `.env`
+`docker-compose.yml` already points at these images through `FamilyGramServerRegistry`/`FamilyGramServerVersion` in `.env`
 (see `.env.example`), so `docker compose pull && docker compose up -d` picks up whatever CI published. `session-server`
 and `file-server` aren't part of this fork's source, so they keep pulling prebuilt images from the upstream
 MyTelegram registry via the separate `MyTelegramRegistry`/`MyTelegramVersion` variables.
 
 > GHCR packages are private by default even on a public repo. The first time the workflow runs, make each
-> `ghcr.io/CyberoniOntoni/testgram/<service-name>` package public under the repo/org's **Packages** settings,
+> `ghcr.io/CyberoniOntoni/FamilyGram-Server/<service-name>` package public under the repo/org's **Packages** settings,
 > or `docker login ghcr.io` with a token that has `read:packages` before pulling.
 
 You can also trigger a build manually from the **Actions** tab (`workflow_dispatch`).
@@ -343,18 +343,18 @@ You can also trigger a build manually from the **Actions** tab (`workflow_dispat
 ### Local build
 
 `build/docker/*.sh` default to tagging images as `mytelegram/<service-name>`. `docker-compose.yml` pulls
-`${TestgramRegistry}/<service-name>:${TestgramVersion}` (default `ghcr.io/CyberoniOntoni/testgram`), so set
+`${FamilyGramServerRegistry}/<service-name>:${FamilyGramServerVersion}` (default `ghcr.io/CyberoniOntoni/FamilyGram-Server`), so set
 `REGISTRY_URL` to the same value before building, or `docker compose up -d` will just re-pull from GHCR instead
 of using your local build:
 
 ```bash
 # Linux amd64
 cd build/docker
-export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"   # match TestgramRegistry in .env
+export REGISTRY_URL="ghcr.io/CyberoniOntoni/FamilyGram-Server"   # match FamilyGramServerRegistry in .env
 ./build-all-amd64.sh
 
 # Linux arm64
-export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"
+export REGISTRY_URL="ghcr.io/CyberoniOntoni/FamilyGram-Server"
 ./build-all-arm64.sh
 ```
 
@@ -580,7 +580,7 @@ python3 seed_reactions.py --generate-handler
 
 # 4. Rebuild and redeploy messenger images
 cd ../build/docker
-export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"   # match TestgramRegistry in .env
+export REGISTRY_URL="ghcr.io/CyberoniOntoni/FamilyGram-Server"   # match FamilyGramServerRegistry in .env
 bash 1.build-messenger-command-server.sh
 bash 2.build-messenger-query-server.sh
 cd ../../docker/compose && docker compose down && docker compose up -d

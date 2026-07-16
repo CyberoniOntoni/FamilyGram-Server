@@ -55,7 +55,7 @@ jobs:
           - name: mytelegram-data-seeder
             dockerfile: build/docker/Dockerfile-mytelegram-data-seeder
             context: source
-          - name: testgram-bot
+          - name: familygram-server-bot
             dockerfile: bot/Dockerfile
             context: bot
 

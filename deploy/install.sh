@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Testgram — interactive Docker Compose installer
+# FamilyGram-Server — interactive Docker Compose installer
 #
 # Usage (save first, then run — do NOT curl | bash):
-#   curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/install.sh -o install.sh
+#   curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/dev/deploy/install.sh -o install.sh
 #   sudo bash install.sh
 #
 # Non-interactive:
@@ -19,15 +19,15 @@
 #   --brand NAME         set App__Brand
 #   --passkey-domain D   set passkey domain
 #   --bot-token TOKEN    set BOT_TOKEN
-#   --install-dir PATH   default /opt/testgram
+#   --install-dir PATH   default /opt/familygram-server
 #   --help               show help
 set -euo pipefail
 
-INSTALLER_VERSION="3.1.2"
+INSTALLER_VERSION="3.2.0"
 
-REPO_URL="${REPO_URL:-https://github.com/CyberoniOntoni/testgram.git}"
+REPO_URL="${REPO_URL:-https://github.com/CyberoniOntoni/FamilyGram-Server.git}"
 REPO_BRANCH="${REPO_BRANCH:-dev}"
-INSTALL_DIR="${INSTALL_DIR:-/opt/testgram}"
+INSTALL_DIR="${INSTALL_DIR:-/opt/familygram-server}"
 COMPOSE_DIR="${INSTALL_DIR}/docker/compose"
 COMPOSE_FILE="${COMPOSE_DIR}/docker-compose.yml"
 
@@ -78,9 +78,9 @@ resolve_installer_lib() {
   done
 
   # Standalone curl download (e.g. /root/install.sh) — fetch lib from GitHub
-  local cache_dir="/tmp/testgram-installer-${INSTALLER_VERSION}"
+  local cache_dir="/tmp/familygram-server-installer-${INSTALLER_VERSION}"
   local cached="${cache_dir}/installer-lib.sh"
-  local raw_url="https://raw.githubusercontent.com/CyberoniOntoni/testgram/${REPO_BRANCH}/deploy/lib/installer-lib.sh"
+  local raw_url="https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/${REPO_BRANCH}/deploy/lib/installer-lib.sh"
   mkdir -p "${cache_dir}"
   if command -v curl >/dev/null 2>&1; then
     curl -fsSL "${raw_url}" -o "${cached}"
@@ -156,7 +156,7 @@ if [[ "${NON_INTERACTIVE}" == true ]]; then
   fi
   [[ -n "${LAN_IP}" ]] || die "LAN_IP required in non-interactive mode"
   [[ -n "${PUBLIC_IP}" ]] || die "PUBLIC_IP required in non-interactive mode"
-  [[ -n "${BRAND}" ]] || BRAND="Testgram"
+  [[ -n "${BRAND}" ]] || BRAND="FamilyGram"
   [[ -n "${BOT_TOKEN}" ]] || die "BOT_TOKEN required in non-interactive mode"
   if [[ "${ENABLE_PASSKEY}" == "yes" ]]; then
     [[ -n "${PASSKEY_DOMAIN}" ]] || die "PASSKEY_DOMAIN required when ENABLE_PASSKEY=yes"

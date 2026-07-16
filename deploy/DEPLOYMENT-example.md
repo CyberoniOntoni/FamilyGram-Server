@@ -1,19 +1,19 @@
 # Example Testgram Deployment — Complete Setup & Configuration Guide
 
-Self-hosted [Testgram](https://github.com/CyberoniOntoni/testgram) on Proxmox for **AcmeChat**, with internet access, Cloudflare DNS, and optional Nginx Proxy Manager (NPM).
+Self-hosted [Testgram](https://github.com/CyberoniOntoni/FamilyGram-Server) on Proxmox for **AcmeChat**, with internet access, Cloudflare DNS, and optional Nginx Proxy Manager (NPM).
 
 ## Deployment summary
 
 | Item | Value |
 |------|-------|
-| Fork / repo | `https://github.com/CyberoniOntoni/testgram` (branch `dev`) |
+| Fork / repo | `https://github.com/CyberoniOntoni/FamilyGram-Server` (branch `dev`) |
 | Proxmox VM LAN IP | `192.168.1.10` |
 | Public WAN IP | `123.123.123.123` |
 | Domain | `acmechat.example` |
 | Subdomain (passkey / NPM) | `tg.acmechat.example` |
 | NPM host | `192.168.1.11` |
 | Brand name | `AcmeChat` |
-| Docker images | `ghcr.io/cyberoniontoni/testgram/*` + `mytelegram/*` (session/file) |
+| Docker images | `ghcr.io/cyberoniontoni/familygram-server/*` + `mytelegram/*` (session/file) |
 
 ---
 
@@ -68,7 +68,7 @@ Optional:
 
 ### Accounts & services
 
-- GitHub access to pull images from `ghcr.io/cyberoniontoni/testgram`
+- GitHub access to pull images from `ghcr.io/cyberoniontoni/familygram-server`
 - Telegram account + [@BotFather](https://t.me/BotFather) bot token
 - Cloudflare account with `acmechat.example` (free tier, optional but recommended for passkey)
 - Router admin access for port forwarding
@@ -162,7 +162,7 @@ ssh root@192.168.1.10
 `deploy/install.sh` is the Docker interactive wizard — public IP, LAN IP, ports, branding, bot token, then a **port-forward checklist**.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/testgram/dev/deploy/install.sh -o /tmp/install.sh
+curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/dev/deploy/install.sh -o /tmp/install.sh
 sudo bash /tmp/install.sh
 ```
 
@@ -183,7 +183,7 @@ sudo bash /tmp/install.sh --non-interactive --start
 ### Or from a cloned repo
 
 ```bash
-git clone -b dev https://github.com/CyberoniOntoni/testgram.git /opt/testgram
+git clone -b dev https://github.com/CyberoniOntoni/FamilyGram-Server.git /opt/testgram
 sudo bash /opt/testgram/deploy/install.sh
 ```
 
@@ -219,13 +219,13 @@ Or use a **privileged** LXC container.
 Custom-built services are published by GitHub Actions to:
 
 ```text
-ghcr.io/cyberoniontoni/testgram/mytelegram-messenger-command-server:latest
-ghcr.io/cyberoniontoni/testgram/mytelegram-messenger-query-server:latest
-ghcr.io/cyberoniontoni/testgram/mytelegram-gateway-server:latest
-ghcr.io/cyberoniontoni/testgram/mytelegram-auth-server:latest
-ghcr.io/cyberoniontoni/testgram/mytelegram-sms-sender:latest
-ghcr.io/cyberoniontoni/testgram/mytelegram-data-seeder:latest
-ghcr.io/cyberoniontoni/testgram/testgram-bot:latest
+ghcr.io/cyberoniontoni/familygram-server/mytelegram-messenger-command-server:latest
+ghcr.io/cyberoniontoni/familygram-server/mytelegram-messenger-query-server:latest
+ghcr.io/cyberoniontoni/familygram-server/mytelegram-gateway-server:latest
+ghcr.io/cyberoniontoni/familygram-server/mytelegram-auth-server:latest
+ghcr.io/cyberoniontoni/familygram-server/mytelegram-sms-sender:latest
+ghcr.io/cyberoniontoni/familygram-server/mytelegram-data-seeder:latest
+ghcr.io/cyberoniontoni/familygram-server/familygram-server-bot:latest
 ```
 
 Upstream images (not built by the fork):
@@ -247,7 +247,7 @@ echo YOUR_GITHUB_PAT | docker login ghcr.io -u CyberoniOntoni --password-stdin
 
 ### Verify CI built images
 
-Check: https://github.com/CyberoniOntoni/testgram/actions — workflow **Build and Push Docker Images** must be green on `dev`.
+Check: https://github.com/CyberoniOntoni/FamilyGram-Server/actions — workflow **Build and Push Docker Images** must be green on `dev`.
 
 ---
 
@@ -578,7 +578,7 @@ docker compose down -v
 
 ## Support & upstream
 
-- Fork: https://github.com/CyberoniOntoni/testgram
+- Fork: https://github.com/CyberoniOntoni/FamilyGram-Server
 - Upstream: https://github.com/glebxdlolreal/testgram
 - Calls setup: `docs/CALLS_SETUP.md`
 - General README: `README.md`
