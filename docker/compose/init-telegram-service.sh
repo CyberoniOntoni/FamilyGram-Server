@@ -1,9 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
+echo "Waiting for MongoDB to be ready..."
+until mongosh --host mongodb:27017 --eval "db.adminCommand('ping')" > /dev/null 2>&1; do
+  sleep 2
+done
+
 echo "MongoDB is ready. Checking Telegram service user (777000)..."
 
-docker compose exec -T mongodb mongosh tg --quiet <<'MONGO'
+mongosh --host mongodb:27017 tg --quiet <<'MONGO'
 const serviceUserId = Long(777000);
 const now = new Date();
 const users = db.getCollection("eventflow-userreadmodel");
