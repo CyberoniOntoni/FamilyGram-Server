@@ -2,7 +2,7 @@
 # Print random values for .env CHANGE_ME fields. Copy output into docker/compose/.env
 set -euo pipefail
 
-echo "# Paste these into /opt/testgram/docker/compose/.env"
+echo "# Paste these into /opt/familygram-server/docker/compose/.env"
 echo ""
 echo "RabbitMQ__Connections__Default__Password=$(openssl rand -hex 24)"
 echo "Minio__SecretKey=$(openssl rand -hex 24)"

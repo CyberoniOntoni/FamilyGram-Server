@@ -237,7 +237,7 @@ mytelegram/mytelegram-file-server:latest
 
 ### Make packages public (one-time)
 
-GitHub → your profile → **Packages** → each `cyberoniontoni/testgram/*` package → **Package settings** → **Change visibility** → Public.
+GitHub → your profile → **Packages** → each `cyberoniontoni/familygram-server/*` package → **Package settings** → **Change visibility** → Public.
 
 Or on the VM, log in:
 
