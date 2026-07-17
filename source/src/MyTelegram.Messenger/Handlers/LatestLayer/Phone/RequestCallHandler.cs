@@ -1,7 +1,6 @@
 ﻿using MongoDB.Driver;
 using MyTelegram.Domain.Shared;
 using MyTelegram.Messenger.Services.Phone;
-using MyTelegram.Messenger.Services;
 using MyTelegram.Schema;
 using MyTelegram.Schema.Phone;
 using MyTelegram.Services.Phone;
@@ -13,7 +12,6 @@ internal sealed class RequestCallHandler(
     IMongoDatabase mongoDatabase,
     IUserConverterService userConverterService,
     IObjectMessageSender objectMessageSender,
-    IMessageAppService messageAppService,
     IUserAccessHashKeyCache userAccessHashKeyCache,
     IAccessHashHelper2 accessHashHelper2)
     : RpcResultObjectHandler<RequestRequestCall, MyTelegram.Schema.Phone.IPhoneCall>
@@ -134,7 +132,9 @@ internal sealed class RequestCallHandler(
             incomingCallUpdates,
             pushData: CreateIncomingCallPushData(input.UserId, calleeId, callId, calleeAccessHash, incomingCallUpdates, users));
 
-        await SendIncomingCallServiceMessageAsync(input, callId, calleeId, obj.Video);
+        // Do not post a chat service message here. Telegram-style history only adds a
+        // messageActionPhoneCall when the call ends (discard). Intermediate bubbles without
+        // reason/duration are shown as "Declined" in the web client.
 
         return new MyTelegram.Schema.Phone.TPhoneCall
         {
@@ -167,27 +167,6 @@ internal sealed class RequestCallHandler(
         {
             RpcErrors.RpcErrors400.CallProtocolLayerInvalid.ThrowRpcError();
         }
-    }
-
-    private async Task SendIncomingCallServiceMessageAsync(IRequestInput input, long callId, long calleeId, bool video)
-    {
-        var action = new TMessageActionPhoneCall
-        {
-            CallId = callId,
-            Video = video
-        };
-
-        var sendInput = new SendMessageInput(
-            input.ToRequestInfo() with { ReqMsgId = 0 },
-            input.UserId,
-            new Peer(PeerType.User, calleeId),
-            string.Empty,
-            Random.Shared.NextInt64(),
-            sendMessageType: SendMessageType.MessageService,
-            messageType: MessageType.PhoneCall,
-            messageAction: action
-        );
-        await messageAppService.SendMessageAsync([sendInput]);
     }
 
     private static PushData CreateIncomingCallPushData(

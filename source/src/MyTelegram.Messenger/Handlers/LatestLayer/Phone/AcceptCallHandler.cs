@@ -1,6 +1,5 @@
 using MongoDB.Driver;
 using MyTelegram.Messenger.Services.Phone;
-using MyTelegram.Messenger.Services;
 using MyTelegram.Schema;
 using MyTelegram.Schema.Phone;
 using MyTelegram.Services.Phone;
@@ -12,7 +11,6 @@ internal sealed class AcceptCallHandler(
     IMongoDatabase mongoDatabase,
     IUserConverterService userConverterService,
     IObjectMessageSender objectMessageSender,
-    IMessageAppService messageAppService,
     IAccessHashHelper2 accessHashHelper2)
     : RpcResultObjectHandler<MyTelegram.Schema.Phone.RequestAcceptCall, MyTelegram.Schema.Phone.IPhoneCall>
 {
@@ -100,7 +98,7 @@ internal sealed class AcceptCallHandler(
             onlySendToUserId: session.CallerId,
             onlySendToThisAuthKeyId: session.CallerPermAuthKeyId > 0 ? session.CallerPermAuthKeyId : null);
 
-        await SendCallAcceptedServiceMessageAsync(input, session.CallId, session.CallerId, session.Video);
+        // Chat history is written only on discard (see DiscardCallHandler), not on accept.
 
         return new MyTelegram.Schema.Phone.TPhoneCall
         {
@@ -160,24 +158,4 @@ internal sealed class AcceptCallHandler(
         }
     }
 
-    private async Task SendCallAcceptedServiceMessageAsync(IRequestInput input, long callId, long callerId, bool video)
-    {
-        var action = new TMessageActionPhoneCall
-        {
-            CallId = callId,
-            Video = video
-        };
-
-        var sendInput = new SendMessageInput(
-            input.ToRequestInfo() with { ReqMsgId = 0 },
-            input.UserId,
-            new Peer(PeerType.User, callerId),
-            string.Empty,
-            Random.Shared.NextInt64(),
-            sendMessageType: SendMessageType.MessageService,
-            messageType: MessageType.PhoneCall,
-            messageAction: action
-        );
-        await messageAppService.SendMessageAsync([sendInput]);
-    }
 }

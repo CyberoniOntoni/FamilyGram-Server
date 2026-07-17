@@ -44,22 +44,25 @@ internal sealed class DiscardCallHandler(
         }
 
         var reason = ConvertReason(obj.Reason);
+        var currentDate = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        // Web clients often send duration=0; derive from session start so history is not empty.
+        var duration = obj.Duration > 0
+            ? obj.Duration
+            : Math.Max(0, currentDate - session.Date);
 
         var update = Builders<CallSessionDocument>.Update
             .Set(s => s.State, "discarded")
-            .Set(s => s.Duration, obj.Duration)
+            .Set(s => s.Duration, duration)
             .Set(s => s.DiscardReason, reason)
             .Set(s => s.Video, session.Video || obj.Video);
 
         await _callCollection.UpdateOneAsync(filter, update);
 
-        var currentDate = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
         var discardedCall = new Schema.TPhoneCallDiscarded
         {
             Id = session.CallId,
             Reason = obj.Reason,
-            Duration = obj.Duration,
+            Duration = duration,
             NeedRating = session.State == "confirmed",
             NeedDebug = session.State == "confirmed",
             Video = session.Video || obj.Video
@@ -86,7 +89,7 @@ internal sealed class DiscardCallHandler(
             session.CallId,
             session.CallerId,
             session.CalleeId,
-            obj.Duration,
+            duration,
             obj.Reason,
             session.Video || obj.Video);
 
