@@ -189,6 +189,9 @@ public sealed class SessionRequestDispatcher(
 
         if (ObjectIdConsts.CommandServerHandlers.ContainsKey(constructorId))
         {
+            logger.LogInformation(
+                "Dispatch command 0x{ObjectId:x8} user={UserId} reqMsgId={ReqMsgId} layer={Layer}",
+                constructorId, state.UserId, msgId, state.Layer);
             await eventBus.PublishAsync(new MessengerCommandDataReceivedEvent(
                 envelope.ConnectionId, envelope.ConnectionType, requestId, constructorId,
                 state.UserId, msgId, seqNo, state.AuthKeyId, permAuthKeyId,
@@ -197,6 +200,9 @@ public sealed class SessionRequestDispatcher(
             return;
         }
 
+        logger.LogInformation(
+            "Dispatch query 0x{ObjectId:x8} user={UserId} reqMsgId={ReqMsgId} layer={Layer}",
+            constructorId, state.UserId, msgId, state.Layer);
         await eventBus.PublishAsync(new MessengerQueryDataReceivedEvent(
             envelope.ConnectionId, envelope.ConnectionType, requestId, constructorId,
             state.UserId, msgId, seqNo, state.AuthKeyId, permAuthKeyId,
@@ -215,7 +221,7 @@ public sealed class SessionRequestDispatcher(
 
         var pong = new TPong { MsgId = reqMsgId, PingId = pingId };
         await SendObjectAsync(state, pong, contentRelated: false);
-        logger.LogDebug("Ping handled authKey={AuthKeyId:x} user={UserId}", state.AuthKeyId, state.UserId);
+        logger.LogInformation("Ping handled authKey={AuthKeyId:x} user={UserId}", state.AuthKeyId, state.UserId);
     }
 
     public async Task SendObjectAsync(SessionState state, IObject body, bool contentRelated)

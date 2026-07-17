@@ -48,7 +48,10 @@ public static class SessionServerServiceCollectionExtensions
         services.AddSubscription<EncryptedMessage, EncryptedMessageEventHandler>();
         services.AddSubscription<AuthKeyCreatedIntegrationEvent, AuthKeyCreatedEventHandler>();
         services.AddSubscription<DataResultResponseReceivedEvent, DataResultResponseEventHandler>();
+        services.AddSubscription<DataResultResponseWithUserIdReceivedEvent, DataResultWithUserIdEventHandler>();
         services.AddSubscription<FileDataResultResponseReceivedEvent, FileDataResultResponseEventHandler>();
+        services.AddSubscription<LayeredPushMessageCreatedIntegrationEvent, LayeredPushMessageEventHandler>();
+        services.AddSubscription<LayeredAuthKeyIdMessageCreatedIntegrationEvent, LayeredAuthKeyIdMessageEventHandler>();
         services.AddSubscription<UserSignInSuccessEvent, UserSignInSuccessEventHandler>();
         services.AddSubscription<BindUserIdToAuthKeyIntegrationEvent, BindUserIdEventHandler>();
 

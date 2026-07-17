@@ -94,6 +94,38 @@ public sealed class MongoAuthKeyStore(
         logger.LogInformation("Bound user {UserId} to authKey {AuthKeyId:x} layer={Layer}", userId, authKeyId, state.Layer);
     }
 
+    public async Task<IReadOnlyList<SessionState>> GetOnlineByUserIdAsync(long userId, CancellationToken cancellationToken = default)
+    {
+        var list = new List<SessionState>();
+        foreach (var s in _cache.Values)
+        {
+            if (s.UserId == userId && !string.IsNullOrEmpty(s.ConnectionId))
+            {
+                list.Add(s);
+            }
+        }
+
+        if (list.Count > 0)
+        {
+            return list;
+        }
+
+        // Fallback: load active keys for user from Mongo (may lack ConnectionId until next client packet)
+        var docs = await Collection.Find(Builders<BsonDocument>.Filter.Eq("UserId", userId))
+            .ToListAsync(cancellationToken);
+        foreach (var doc in docs)
+        {
+            var state = FromDocument(doc);
+            _cache[state.AuthKeyId] = state;
+            if (!string.IsNullOrEmpty(state.ConnectionId))
+            {
+                list.Add(state);
+            }
+        }
+
+        return list;
+    }
+
     private static SessionState FromDocument(BsonDocument doc)
     {
         var data = doc["Data"].AsBsonBinaryData.Bytes;
