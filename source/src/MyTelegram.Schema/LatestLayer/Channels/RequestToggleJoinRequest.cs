@@ -16,10 +16,10 @@ namespace MyTelegram.Schema.Channels;
 /// <remarks>
 /// Access: [User ✔] [Bot ✖] [Anonymous ✖]
 /// </remarks>
-[TlObject(0x4c2985b6)]
+[TlObject(0x0ecc2618)]
 public sealed partial class RequestToggleJoinRequest : IRequest<MyTelegram.Schema.IUpdates>
 {
-    public uint ConstructorId => 0x4c2985b6;
+    public uint ConstructorId => 0x0ecc2618;
 
     /// <summary>
     /// Group

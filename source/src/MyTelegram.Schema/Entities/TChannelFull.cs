@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// Full info about a <a href="https://corefork.telegram.org/api/channel#channels">channel</a>, <a href="https://corefork.telegram.org/api/channel#supergroups">supergroup</a> or <a href="https://corefork.telegram.org/api/channel#gigagroups">gigagroup</a>.When updating the <a href="https://corefork.telegram.org/api/peers">local peer database »</a>, all fields from the newly received constructor take priority over the old constructor cached locally (including by removing fields that aren't set in the new constructor).
 /// <para>See <a href="https://corefork.telegram.org/constructor/channelFull" /></para>
 /// </summary>
-[TlObject(0xe4e0b29d)]
+[TlObject(0xa04e8d3a)]
 public sealed partial class TChannelFull : IChatFull, ILayeredChannelFull
 {
-    public uint ConstructorId => 0xe4e0b29d;
+    public uint ConstructorId => 0xa04e8d3a;
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>
     /// </summary>
@@ -365,6 +365,11 @@ public sealed partial class TChannelFull : IChatFull, ILayeredChannelFull
     /// </summary>
     public MyTelegram.Schema.IProfileTab? MainTab { get; set; }
 
+    /// <summary>
+    /// Guard bot id for this channel (layer 228+).
+    /// </summary>
+    public long? GuardBotId { get; set; }
+
     public void ComputeFlag()
     {
         if (CanViewParticipants) { Flags = Flags.SetBit(3); }
@@ -424,6 +429,7 @@ public sealed partial class TChannelFull : IChatFull, ILayeredChannelFull
         if (/*StargiftsCount != 0 && */StargiftsCount.HasValue) { Flags2 = Flags2.SetBit(18); }
         if (/*SendPaidMessagesStars != 0 &&*/ SendPaidMessagesStars.HasValue) { Flags2 = Flags2.SetBit(21); }
         if (MainTab != null) { Flags2 = Flags2.SetBit(22); }
+        if (/*GuardBotId != 0 &&*/ GuardBotId.HasValue) { Flags2 = Flags2.SetBit(23); }
     }
 
     public void Serialize(IBufferWriter<byte> writer)
@@ -477,6 +483,7 @@ public sealed partial class TChannelFull : IChatFull, ILayeredChannelFull
         if (Flags2.IsBitSet(18)) { writer.Write(StargiftsCount.Value); }
         if (Flags2.IsBitSet(21)) { writer.Write(SendPaidMessagesStars.Value); }
         if (Flags2.IsBitSet(22)) { writer.Write(MainTab); }
+        if (Flags2.IsBitSet(23)) { writer.Write(GuardBotId.Value); }
     }
 
     public void Deserialize(ref ReadOnlyMemory<byte> buffer)
@@ -549,5 +556,6 @@ public sealed partial class TChannelFull : IChatFull, ILayeredChannelFull
         if (Flags2.IsBitSet(18)) { StargiftsCount = buffer.ReadInt32(); }
         if (Flags2.IsBitSet(21)) { SendPaidMessagesStars = buffer.ReadInt64(); }
         if (Flags2.IsBitSet(22)) { MainTab = buffer.Read<MyTelegram.Schema.IProfileTab>(); }
+        if (Flags2.IsBitSet(23)) { GuardBotId = buffer.ReadInt64(); }
     }
 }

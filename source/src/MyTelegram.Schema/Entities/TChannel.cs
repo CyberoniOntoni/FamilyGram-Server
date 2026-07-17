@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// Channel/supergroup infoWhen updating the <a href="https://corefork.telegram.org/api/peers">local peer database</a>, all fields from the newly received constructor take priority over the old constructor cached locally (including by removing fields that aren't set in the new constructor).The only exception to the above rule is when the <code>min</code> flag is set, in which case <strong>only</strong> the following fields must be applied over any locally stored version:See <a href="https://github.com/tdlib/td/blob/a24af0992245f838f2b4b418a0a2d5fa9caa27b5/td/telegram/ChatManager.cpp#L8329">here »</a> for an implementation of the logic to use when updating the <a href="https://corefork.telegram.org/api/peers">local user peer database</a>.
 /// <para>See <a href="https://corefork.telegram.org/constructor/channel" /></para>
 /// </summary>
-[TlObject(0x1c32b11c)]
+[TlObject(0xd49f34c6)]
 public sealed partial class TChannel : IChat, ILayeredChannel
 {
-    public uint ConstructorId => 0x1c32b11c;
+    public uint ConstructorId => 0xd49f34c6;
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>
     /// </summary>
@@ -275,6 +275,11 @@ public sealed partial class TChannel : IChat, ILayeredChannel
     /// </summary>
     public long? LinkedMonoforumId { get; set; }
 
+    /// <summary>
+    /// Linked community id (layer 228+).
+    /// </summary>
+    public long? LinkedCommunityId { get; set; }
+
     public void ComputeFlag()
     {
         if (Creator) { Flags = Flags.SetBit(0); }
@@ -322,6 +327,7 @@ public sealed partial class TChannel : IChat, ILayeredChannel
         if (/*BotVerificationIcon != 0 &&*/ BotVerificationIcon.HasValue) { Flags2 = Flags2.SetBit(13); }
         if (/*SendPaidMessagesStars != 0 &&*/ SendPaidMessagesStars.HasValue) { Flags2 = Flags2.SetBit(14); }
         if (/*LinkedMonoforumId != 0 &&*/ LinkedMonoforumId.HasValue) { Flags2 = Flags2.SetBit(18); }
+        if (/*LinkedCommunityId != 0 &&*/ LinkedCommunityId.HasValue) { Flags2 = Flags2.SetBit(20); }
     }
 
     public void Serialize(IBufferWriter<byte> writer)
@@ -351,6 +357,7 @@ public sealed partial class TChannel : IChat, ILayeredChannel
         if (Flags2.IsBitSet(13)) { writer.Write(BotVerificationIcon.Value); }
         if (Flags2.IsBitSet(14)) { writer.Write(SendPaidMessagesStars.Value); }
         if (Flags2.IsBitSet(18)) { writer.Write(LinkedMonoforumId.Value); }
+        if (Flags2.IsBitSet(20)) { writer.Write(LinkedCommunityId.Value); }
     }
 
     public void Deserialize(ref ReadOnlyMemory<byte> buffer)
@@ -406,5 +413,6 @@ public sealed partial class TChannel : IChat, ILayeredChannel
         if (Flags2.IsBitSet(13)) { BotVerificationIcon = buffer.ReadInt64(); }
         if (Flags2.IsBitSet(14)) { SendPaidMessagesStars = buffer.ReadInt64(); }
         if (Flags2.IsBitSet(18)) { LinkedMonoforumId = buffer.ReadInt64(); }
+        if (Flags2.IsBitSet(20)) { LinkedCommunityId = buffer.ReadInt64(); }
     }
 }

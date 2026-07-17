@@ -16,10 +16,10 @@ namespace MyTelegram.Schema.Messages;
 /// <remarks>
 /// Access: [User ✔] [Bot ✖] [Anonymous ✖]
 /// </remarks>
-[TlObject(0x54ae308e)]
+[TlObject(0xad0fa15c)]
 public sealed partial class RequestSaveDraft : IRequest<IBool>
 {
-    public uint ConstructorId => 0x54ae308e;
+    public uint ConstructorId => 0xad0fa15c;
 
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>
@@ -76,6 +76,12 @@ public sealed partial class RequestSaveDraft : IRequest<IBool>
     /// </summary>
     public MyTelegram.Schema.ISuggestedPost? SuggestedPost { get; set; }
 
+    /// <summary>
+    /// Rich message draft (layer 228+).
+    /// See <a href="https://corefork.telegram.org/type/InputRichMessage" />
+    /// </summary>
+    public MyTelegram.Schema.IInputRichMessage? RichMessage { get; set; }
+
     public void ComputeFlag()
     {
         if (NoWebpage) { Flags = Flags.SetBit(1); }
@@ -85,6 +91,7 @@ public sealed partial class RequestSaveDraft : IRequest<IBool>
         if (Media != null) { Flags = Flags.SetBit(5); }
         if (/*Effect != 0 &&*/ Effect.HasValue) { Flags = Flags.SetBit(7); }
         if (SuggestedPost != null) { Flags = Flags.SetBit(8); }
+        if (RichMessage != null) { Flags = Flags.SetBit(9); }
     }
 
     public void Serialize(IBufferWriter<byte> writer)
@@ -99,6 +106,7 @@ public sealed partial class RequestSaveDraft : IRequest<IBool>
         if (Flags.IsBitSet(5)) { writer.Write(Media); }
         if (Flags.IsBitSet(7)) { writer.Write(Effect.Value); }
         if (Flags.IsBitSet(8)) { writer.Write(SuggestedPost); }
+        if (Flags.IsBitSet(9)) { writer.Write(RichMessage); }
     }
 
     public void Deserialize(ref ReadOnlyMemory<byte> buffer)
@@ -113,5 +121,6 @@ public sealed partial class RequestSaveDraft : IRequest<IBool>
         if (Flags.IsBitSet(5)) { Media = buffer.Read<MyTelegram.Schema.IInputMedia>(); }
         if (Flags.IsBitSet(7)) { Effect = buffer.ReadInt64(); }
         if (Flags.IsBitSet(8)) { SuggestedPost = buffer.Read<MyTelegram.Schema.ISuggestedPost>(); }
+        if (Flags.IsBitSet(9)) { RichMessage = buffer.Read<MyTelegram.Schema.IInputRichMessage>(); }
     }
 }

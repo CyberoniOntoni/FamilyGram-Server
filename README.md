@@ -1,7 +1,7 @@
 # FamilyGram-Server
 
-[![API Layer](https://img.shields.io/badge/API_Layer-224-blueviolet)](https://corefork.telegram.org/methods)
-[![Layer 228](https://img.shields.io/badge/Layer_228-planned-lightgrey)](docs/LAYER_228_UPGRADE.md)
+[![API Layer](https://img.shields.io/badge/API_Layer-228-blueviolet)](https://corefork.telegram.org/methods)
+[![Multi-layer](https://img.shields.io/badge/Multi--layer-224–228-green)](docs/LAYER_228_UPGRADE.md)
 [![MTProto](https://img.shields.io/badge/MTProto_Protocol-2.0-green)](https://corefork.telegram.org/mtproto/)
 [![Fork](https://img.shields.io/badge/fork-loyldg%2Fmytelegram-blue)](https://github.com/loyldg/mytelegram)
 
@@ -10,7 +10,7 @@
 ## Supported Features
 
 ### Open Source Features
-- API Layer: `224` (production). Layer **228** upgrade is planned — see [docs/LAYER_228_UPGRADE.md](docs/LAYER_228_UPGRADE.md).
+- API Layer: `228` (Latest). Multi-layer **224–228** via dual constructor registration — see [docs/LAYER_228_UPGRADE.md](docs/LAYER_228_UPGRADE.md).
 - MTProto Transports: `Abridged`, `Intermediate`
 - Private Chat
 - Supergroup Chat

@@ -1,18 +1,18 @@
-﻿namespace MyTelegram;
+namespace MyTelegram;
 
 /// <summary>
 /// MTProto API layer constants for FamilyGram-Server.
-/// Production still speaks <see cref="LayerLatest"/> = 224 until the layer-228
-/// schema regeneration + multi-layer converters land (see docs/LAYER_228_UPGRADE.md).
+/// Latest schema is layer 228 with dual-registration of layer-224 constructor IDs
+/// for bit-compatible request/response interop (see docs/LAYER_228_UPGRADE.md).
 /// </summary>
 public class Layers
 {
-    /// <summary>Lowest client layer we intend to keep working once multi-layer is complete.</summary>
+    /// <summary>Lowest client layer we keep working via aliases / LayerN converters.</summary>
     public const int LayerMinSupported = 224;
 
-    /// <summary>Layer currently implemented by LatestLayer schema/handlers (production).</summary>
-    public const int LayerLatest = 224;
+    /// <summary>Layer implemented by LatestLayer schema/handlers.</summary>
+    public const int LayerLatest = 228;
 
-    /// <summary>tdesktop/tdlib target layer for the upgrade (schema + converters not complete yet).</summary>
+    /// <summary>Same as <see cref="LayerLatest"/> (tdesktop / tdlib target).</summary>
     public const int LayerTarget = 228;
-}
+}

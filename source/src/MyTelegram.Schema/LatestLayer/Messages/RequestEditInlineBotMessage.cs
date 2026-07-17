@@ -15,10 +15,10 @@ namespace MyTelegram.Schema.Messages;
 /// <remarks>
 /// Access: [User ✔] [Bot ✔] [Anonymous ✖]
 /// </remarks>
-[TlObject(0x83557dba)]
+[TlObject(0xa423bb51)]
 public sealed partial class RequestEditInlineBotMessage : IRequest<IBool>
 {
-    public uint ConstructorId => 0x83557dba;
+    public uint ConstructorId => 0xa423bb51;
 
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>

@@ -84,10 +84,10 @@ namespace MyTelegram.Schema.Messages;
 /// <remarks>
 /// Access: [User ✔] [Bot ✔] [Anonymous ✖]
 /// </remarks>
-[TlObject(0x545cd15a)]
+[TlObject(0xfef48f62)]
 public sealed partial class RequestSendMessage : IRequest<MyTelegram.Schema.IUpdates>
 {
-    public uint ConstructorId => 0x545cd15a;
+    public uint ConstructorId => 0xfef48f62;
 
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>
@@ -206,6 +206,12 @@ public sealed partial class RequestSendMessage : IRequest<MyTelegram.Schema.IUpd
     /// </summary>
     public MyTelegram.Schema.ISuggestedPost? SuggestedPost { get; set; }
 
+    /// <summary>
+    /// Rich message body (layer 228+).
+    /// See <a href="https://corefork.telegram.org/type/InputRichMessage" />
+    /// </summary>
+    public MyTelegram.Schema.IInputRichMessage? RichMessage { get; set; }
+
     public void ComputeFlag()
     {
         if (NoWebpage) { Flags = Flags.SetBit(1); }
@@ -226,6 +232,7 @@ public sealed partial class RequestSendMessage : IRequest<MyTelegram.Schema.IUpd
         if (/*Effect != 0 &&*/ Effect.HasValue) { Flags = Flags.SetBit(18); }
         if (/*AllowPaidStars != 0 &&*/ AllowPaidStars.HasValue) { Flags = Flags.SetBit(21); }
         if (SuggestedPost != null) { Flags = Flags.SetBit(22); }
+        if (RichMessage != null) { Flags = Flags.SetBit(23); }
     }
 
     public void Serialize(IBufferWriter<byte> writer)
@@ -246,6 +253,7 @@ public sealed partial class RequestSendMessage : IRequest<MyTelegram.Schema.IUpd
         if (Flags.IsBitSet(18)) { writer.Write(Effect.Value); }
         if (Flags.IsBitSet(21)) { writer.Write(AllowPaidStars.Value); }
         if (Flags.IsBitSet(22)) { writer.Write(SuggestedPost); }
+        if (Flags.IsBitSet(23)) { writer.Write(RichMessage); }
     }
 
     public void Deserialize(ref ReadOnlyMemory<byte> buffer)
@@ -272,5 +280,6 @@ public sealed partial class RequestSendMessage : IRequest<MyTelegram.Schema.IUpd
         if (Flags.IsBitSet(18)) { Effect = buffer.ReadInt64(); }
         if (Flags.IsBitSet(21)) { AllowPaidStars = buffer.ReadInt64(); }
         if (Flags.IsBitSet(22)) { SuggestedPost = buffer.Read<MyTelegram.Schema.ISuggestedPost>(); }
+        if (Flags.IsBitSet(23)) { RichMessage = buffer.Read<MyTelegram.Schema.IInputRichMessage>(); }
     }
 }

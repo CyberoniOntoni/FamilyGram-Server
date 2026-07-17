@@ -6,10 +6,10 @@ namespace MyTelegram.Schema.Auth;
 /// Official apps may receive this constructor, indicating that due to the high cost of SMS verification codes for the user's country/provider, the user must purchase a <a href="https://corefork.telegram.org/api/premium">Telegram Premium</a> subscription in order to proceed with the login/signup.
 /// <para>See <a href="https://corefork.telegram.org/constructor/auth.sentCodePaymentRequired" /></para>
 /// </summary>
-[TlObject(0xe0955a3c)]
+[TlObject(0xf8827ebf)]
 public sealed partial class TSentCodePaymentRequired : ISentCode
 {
-    public uint ConstructorId => 0xe0955a3c;
+    public uint ConstructorId => 0xf8827ebf;
     /// <summary>
     /// Store identifier of the Telegram Premium subscription.
     /// </summary>

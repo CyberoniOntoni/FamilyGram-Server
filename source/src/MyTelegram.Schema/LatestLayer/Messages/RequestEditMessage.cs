@@ -59,10 +59,10 @@ namespace MyTelegram.Schema.Messages;
 /// <remarks>
 /// Access: [User ✔] [Bot ✔] [Anonymous ✖]
 /// </remarks>
-[TlObject(0x51e842e1)]
+[TlObject(0xb106e66c)]
 public sealed partial class RequestEditMessage : IRequest<MyTelegram.Schema.IUpdates>
 {
-    public uint ConstructorId => 0x51e842e1;
+    public uint ConstructorId => 0xb106e66c;
 
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>
@@ -128,6 +128,12 @@ public sealed partial class RequestEditMessage : IRequest<MyTelegram.Schema.IUpd
     /// </summary>
     public int? QuickReplyShortcutId { get; set; }
 
+    /// <summary>
+    /// Rich message body (layer 228+).
+    /// See <a href="https://corefork.telegram.org/type/InputRichMessage" />
+    /// </summary>
+    public MyTelegram.Schema.IInputRichMessage? RichMessage { get; set; }
+
     public void ComputeFlag()
     {
         if (NoWebpage) { Flags = Flags.SetBit(1); }
@@ -139,6 +145,7 @@ public sealed partial class RequestEditMessage : IRequest<MyTelegram.Schema.IUpd
         if (/*ScheduleDate != 0 && */ScheduleDate.HasValue) { Flags = Flags.SetBit(15); }
         if (/*ScheduleRepeatPeriod != 0 && */ScheduleRepeatPeriod.HasValue) { Flags = Flags.SetBit(18); }
         if (/*QuickReplyShortcutId != 0 && */QuickReplyShortcutId.HasValue) { Flags = Flags.SetBit(17); }
+        if (RichMessage != null) { Flags = Flags.SetBit(23); }
     }
 
     public void Serialize(IBufferWriter<byte> writer)
@@ -155,6 +162,7 @@ public sealed partial class RequestEditMessage : IRequest<MyTelegram.Schema.IUpd
         if (Flags.IsBitSet(15)) { writer.Write(ScheduleDate.Value); }
         if (Flags.IsBitSet(18)) { writer.Write(ScheduleRepeatPeriod.Value); }
         if (Flags.IsBitSet(17)) { writer.Write(QuickReplyShortcutId.Value); }
+        if (Flags.IsBitSet(23)) { writer.Write(RichMessage); }
     }
 
     public void Deserialize(ref ReadOnlyMemory<byte> buffer)
@@ -171,5 +179,6 @@ public sealed partial class RequestEditMessage : IRequest<MyTelegram.Schema.IUpd
         if (Flags.IsBitSet(15)) { ScheduleDate = buffer.ReadInt32(); }
         if (Flags.IsBitSet(18)) { ScheduleRepeatPeriod = buffer.ReadInt32(); }
         if (Flags.IsBitSet(17)) { QuickReplyShortcutId = buffer.ReadInt32(); }
+        if (Flags.IsBitSet(23)) { RichMessage = buffer.Read<MyTelegram.Schema.IInputRichMessage>(); }
     }
 }

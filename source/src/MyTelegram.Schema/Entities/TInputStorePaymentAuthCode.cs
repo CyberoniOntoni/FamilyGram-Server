@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// Indicates payment for a login code.
 /// <para>See <a href="https://corefork.telegram.org/constructor/inputStorePaymentAuthCode" /></para>
 /// </summary>
-[TlObject(0x9bb2636d)]
+[TlObject(0x3fc18057)]
 public sealed partial class TInputStorePaymentAuthCode : IInputStorePaymentPurpose
 {
-    public uint ConstructorId => 0x9bb2636d;
+    public uint ConstructorId => 0x3fc18057;
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>
     /// </summary>

@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// A message
 /// <para>See <a href="https://corefork.telegram.org/constructor/message" /></para>
 /// </summary>
-[TlObject(0x3ae56482)]
+[TlObject(0x7600b9d3)]
 public sealed partial class TMessage : IMessage, ILayeredMessage
 {
-    public uint ConstructorId => 0x3ae56482;
+    public uint ConstructorId => 0x7600b9d3;
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>
     /// </summary>
@@ -145,6 +145,12 @@ public sealed partial class TMessage : IMessage, ILayeredMessage
     public long? ViaBusinessBotId { get; set; }
 
     /// <summary>
+    /// Guest-chat sender peer (layer 228+).
+    /// See <a href="https://corefork.telegram.org/type/Peer" />
+    /// </summary>
+    public MyTelegram.Schema.IPeer? GuestchatViaFrom { get; set; }
+
+    /// <summary>
     /// Reply information
     /// See <a href="https://corefork.telegram.org/type/MessageReplyHeader" />
     /// </summary>
@@ -268,6 +274,12 @@ public sealed partial class TMessage : IMessage, ILayeredMessage
     /// </summary>
     public string? SummaryFromLanguage { get; set; }
 
+    /// <summary>
+    /// Rich message body (layer 228+).
+    /// See <a href="https://corefork.telegram.org/type/RichMessage" />
+    /// </summary>
+    public MyTelegram.Schema.IRichMessage? RichMessage { get; set; }
+
     public void ComputeFlag()
     {
         if (Out) { Flags = Flags.SetBit(1); }
@@ -292,6 +304,7 @@ public sealed partial class TMessage : IMessage, ILayeredMessage
         if (FwdFrom != null) { Flags = Flags.SetBit(2); }
         if (/*ViaBotId != 0 &&*/ ViaBotId.HasValue) { Flags = Flags.SetBit(11); }
         if (/*ViaBusinessBotId != 0 &&*/ ViaBusinessBotId.HasValue) { Flags2 = Flags2.SetBit(0); }
+        if (GuestchatViaFrom != null) { Flags2 = Flags2.SetBit(19); }
         if (ReplyTo != null) { Flags = Flags.SetBit(3); }
         if (Media != null) { Flags = Flags.SetBit(9); }
         if (ReplyMarkup != null) { Flags = Flags.SetBit(6); }
@@ -313,6 +326,7 @@ public sealed partial class TMessage : IMessage, ILayeredMessage
         if (SuggestedPost != null) { Flags2 = Flags2.SetBit(7); }
         if (/*ScheduleRepeatPeriod != 0 && */ScheduleRepeatPeriod.HasValue) { Flags2 = Flags2.SetBit(10); }
         if (SummaryFromLanguage != null) { Flags2 = Flags2.SetBit(11); }
+        if (RichMessage != null) { Flags2 = Flags2.SetBit(13); }
     }
 
     public void Serialize(IBufferWriter<byte> writer)
@@ -330,6 +344,7 @@ public sealed partial class TMessage : IMessage, ILayeredMessage
         if (Flags.IsBitSet(2)) { writer.Write(FwdFrom); }
         if (Flags.IsBitSet(11)) { writer.Write(ViaBotId.Value); }
         if (Flags2.IsBitSet(0)) { writer.Write(ViaBusinessBotId.Value); }
+        if (Flags2.IsBitSet(19)) { writer.Write(GuestchatViaFrom); }
         if (Flags.IsBitSet(3)) { writer.Write(ReplyTo); }
         writer.Write(Date);
         writer.Write(Message);
@@ -353,6 +368,7 @@ public sealed partial class TMessage : IMessage, ILayeredMessage
         if (Flags2.IsBitSet(7)) { writer.Write(SuggestedPost); }
         if (Flags2.IsBitSet(10)) { writer.Write(ScheduleRepeatPeriod.Value); }
         if (Flags2.IsBitSet(11)) { writer.Write(SummaryFromLanguage); }
+        if (Flags2.IsBitSet(13)) { writer.Write(RichMessage); }
     }
 
     public void Deserialize(ref ReadOnlyMemory<byte> buffer)
@@ -383,6 +399,7 @@ public sealed partial class TMessage : IMessage, ILayeredMessage
         if (Flags.IsBitSet(2)) { FwdFrom = buffer.Read<MyTelegram.Schema.IMessageFwdHeader>(); }
         if (Flags.IsBitSet(11)) { ViaBotId = buffer.ReadInt64(); }
         if (Flags2.IsBitSet(0)) { ViaBusinessBotId = buffer.ReadInt64(); }
+        if (Flags2.IsBitSet(19)) { GuestchatViaFrom = buffer.Read<MyTelegram.Schema.IPeer>(); }
         if (Flags.IsBitSet(3)) { ReplyTo = buffer.Read<MyTelegram.Schema.IMessageReplyHeader>(); }
         Date = buffer.ReadInt32();
         Message = buffer.ReadString();
@@ -406,5 +423,6 @@ public sealed partial class TMessage : IMessage, ILayeredMessage
         if (Flags2.IsBitSet(7)) { SuggestedPost = buffer.Read<MyTelegram.Schema.ISuggestedPost>(); }
         if (Flags2.IsBitSet(10)) { ScheduleRepeatPeriod = buffer.ReadInt32(); }
         if (Flags2.IsBitSet(11)) { SummaryFromLanguage = buffer.ReadString(); }
+        if (Flags2.IsBitSet(13)) { RichMessage = buffer.Read<MyTelegram.Schema.IRichMessage>(); }
     }
 }

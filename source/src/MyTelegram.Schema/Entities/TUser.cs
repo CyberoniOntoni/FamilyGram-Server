@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// Indicates info about a certain user.Unless specified otherwise, when updating the <a href="https://corefork.telegram.org/api/peers">local peer database</a>, all fields from the newly received constructor take priority over the old constructor cached locally (including by removing fields that aren't set in the new constructor).See <a href="https://github.com/tdlib/td/blob/cb164927417f22811c74cd8678ed4a5ab7cb80ba/td/telegram/UserManager.cpp#L2267">here »</a> for an implementation of the logic to use when updating the <a href="https://corefork.telegram.org/api/peers">local user peer database</a>.
 /// <para>See <a href="https://corefork.telegram.org/constructor/user" /></para>
 /// </summary>
-[TlObject(0x31774388)]
+[TlObject(0xb1b8cc83)]
 public sealed partial class TUser : IUser, ILayeredUser
 {
-    public uint ConstructorId => 0x31774388;
+    public uint ConstructorId => 0xb1b8cc83;
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>
     /// </summary>
@@ -265,6 +265,21 @@ public sealed partial class TUser : IUser, ILayeredUser
     /// </summary>
     public long? SendPaidMessagesStars { get; set; }
 
+    /// <summary>
+    /// Whether this bot supports guest chat (layer 228+).
+    /// </summary>
+    public bool BotGuestchat { get; set; }
+
+    /// <summary>
+    /// Whether this bot is a guard bot (layer 228+).
+    /// </summary>
+    public bool BotGuard { get; set; }
+
+    /// <summary>
+    /// Linked community id (layer 228+).
+    /// </summary>
+    public long? LinkedCommunityId { get; set; }
+
     public void ComputeFlag()
     {
         if (Self) { Flags = Flags.SetBit(10); }
@@ -295,6 +310,8 @@ public sealed partial class TUser : IUser, ILayeredUser
         if (BotForumView) { Flags2 = Flags2.SetBit(16); }
         if (BotForumCanManageTopics) { Flags2 = Flags2.SetBit(17); }
         if (BotCanManageBots) { Flags2 = Flags2.SetBit(18); }
+        if (BotGuestchat) { Flags2 = Flags2.SetBit(19); }
+        if (BotGuard) { Flags2 = Flags2.SetBit(20); }
         if (/*AccessHash != 0 &&*/ AccessHash.HasValue) { Flags = Flags.SetBit(0); }
         if (FirstName != null) { Flags = Flags.SetBit(1); }
         if (LastName != null) { Flags = Flags.SetBit(2); }
@@ -314,6 +331,7 @@ public sealed partial class TUser : IUser, ILayeredUser
         if (/*BotActiveUsers != 0 && */BotActiveUsers.HasValue) { Flags2 = Flags2.SetBit(12); }
         if (/*BotVerificationIcon != 0 &&*/ BotVerificationIcon.HasValue) { Flags2 = Flags2.SetBit(14); }
         if (/*SendPaidMessagesStars != 0 &&*/ SendPaidMessagesStars.HasValue) { Flags2 = Flags2.SetBit(15); }
+        if (/*LinkedCommunityId != 0 &&*/ LinkedCommunityId.HasValue) { Flags2 = Flags2.SetBit(21); }
     }
 
     public void Serialize(IBufferWriter<byte> writer)
@@ -342,6 +360,7 @@ public sealed partial class TUser : IUser, ILayeredUser
         if (Flags2.IsBitSet(12)) { writer.Write(BotActiveUsers.Value); }
         if (Flags2.IsBitSet(14)) { writer.Write(BotVerificationIcon.Value); }
         if (Flags2.IsBitSet(15)) { writer.Write(SendPaidMessagesStars.Value); }
+        if (Flags2.IsBitSet(21)) { writer.Write(LinkedCommunityId.Value); }
     }
 
     public void Deserialize(ref ReadOnlyMemory<byte> buffer)
@@ -376,6 +395,8 @@ public sealed partial class TUser : IUser, ILayeredUser
         if (Flags2.IsBitSet(16)) { BotForumView = true; }
         if (Flags2.IsBitSet(17)) { BotForumCanManageTopics = true; }
         if (Flags2.IsBitSet(18)) { BotCanManageBots = true; }
+        if (Flags2.IsBitSet(19)) { BotGuestchat = true; }
+        if (Flags2.IsBitSet(20)) { BotGuard = true; }
         Id = buffer.ReadInt64();
         if (Flags.IsBitSet(0)) { AccessHash = buffer.ReadInt64(); }
         if (Flags.IsBitSet(1)) { FirstName = buffer.ReadString(); }
@@ -396,5 +417,6 @@ public sealed partial class TUser : IUser, ILayeredUser
         if (Flags2.IsBitSet(12)) { BotActiveUsers = buffer.ReadInt32(); }
         if (Flags2.IsBitSet(14)) { BotVerificationIcon = buffer.ReadInt64(); }
         if (Flags2.IsBitSet(15)) { SendPaidMessagesStars = buffer.ReadInt64(); }
+        if (Flags2.IsBitSet(21)) { LinkedCommunityId = buffer.ReadInt64(); }
     }
 }

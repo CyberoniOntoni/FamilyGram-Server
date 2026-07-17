@@ -14,10 +14,10 @@ namespace MyTelegram.Schema.Messages;
 /// <remarks>
 /// Access: [User ✔] [Bot ✖] [Anonymous ✖]
 /// </remarks>
-[TlObject(0x4bc6589a)]
+[TlObject(0x6126a43c)]
 public sealed partial class RequestSearchGlobal : IRequest<MyTelegram.Schema.Messages.IMessages>
 {
-    public uint ConstructorId => 0x4bc6589a;
+    public uint ConstructorId => 0x6126a43c;
 
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>
