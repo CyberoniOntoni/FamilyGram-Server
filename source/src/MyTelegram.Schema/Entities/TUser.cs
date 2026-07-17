@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// Indicates info about a certain user.Unless specified otherwise, when updating the <a href="https://corefork.telegram.org/api/peers">local peer database</a>, all fields from the newly received constructor take priority over the old constructor cached locally (including by removing fields that aren't set in the new constructor).See <a href="https://github.com/tdlib/td/blob/cb164927417f22811c74cd8678ed4a5ab7cb80ba/td/telegram/UserManager.cpp#L2267">here »</a> for an implementation of the logic to use when updating the <a href="https://corefork.telegram.org/api/peers">local user peer database</a>.
 /// <para>See <a href="https://corefork.telegram.org/constructor/user" /></para>
 /// </summary>
-[TlObject(0xb1b8cc83)]
+[TlObject(0x31774388)]
 public sealed partial class TUser : IUser, ILayeredUser
 {
-    public uint ConstructorId => 0xb1b8cc83;
+    public uint ConstructorId => 0x31774388;
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>
     /// </summary>

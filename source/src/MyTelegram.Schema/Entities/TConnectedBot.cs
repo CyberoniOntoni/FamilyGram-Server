@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// Contains info about a <a href="https://corefork.telegram.org/api/bots/connected-business-bots">connected business bot »</a>.
 /// <para>See <a href="https://corefork.telegram.org/constructor/connectedBot" /></para>
 /// </summary>
-[TlObject(0x033ed001)]
+[TlObject(0xcd64636c)]
 public sealed partial class TConnectedBot : IConnectedBot
 {
-    public uint ConstructorId => 0x033ed001;
+    public uint ConstructorId => 0xcd64636c;
     public int Flags { get; set; }
     public long BotId { get; set; }
     public MyTelegram.Schema.IBusinessBotRecipients Recipients { get; set; }

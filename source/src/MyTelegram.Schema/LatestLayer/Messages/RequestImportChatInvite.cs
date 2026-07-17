@@ -25,10 +25,10 @@ namespace MyTelegram.Schema.Messages;
 /// <remarks>
 /// Access: [User ✔] [Bot ✖] [Anonymous ✖]
 /// </remarks>
-[TlObject(0xde91436e)]
-public sealed partial class RequestImportChatInvite : IRequest<MyTelegram.Schema.Messages.IChatInviteJoinResult>
+[TlObject(0x6c50051c)]
+public sealed partial class RequestImportChatInvite : IRequest<MyTelegram.Schema.IUpdates>
 {
-    public uint ConstructorId => 0xde91436e;
+    public uint ConstructorId => 0x6c50051c;
 
     /// <summary>
     /// <code>hash</code> from a <a href="https://corefork.telegram.org/api/links#chat-invite-links">chat invite deep link</a>

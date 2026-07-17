@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// Someone has requested to join a chat or channel (bots only, users will receive an <a href="https://corefork.telegram.org/constructor/updatePendingJoinRequests">updatePendingJoinRequests</a>, instead)
 /// <para>See <a href="https://corefork.telegram.org/constructor/updateBotChatInviteRequester" /></para>
 /// </summary>
-[TlObject(0x7cb34d79)]
+[TlObject(0x11dfa986)]
 public sealed partial class TUpdateBotChatInviteRequester : IUpdate
 {
-    public uint ConstructorId => 0x7cb34d79;
+    public uint ConstructorId => 0x11dfa986;
     /// <summary>
     /// The chat or channel in question
     /// See <a href="https://corefork.telegram.org/type/Peer" />

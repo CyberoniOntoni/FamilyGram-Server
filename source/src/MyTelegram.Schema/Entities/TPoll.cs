@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// Poll
 /// <para>See <a href="https://corefork.telegram.org/constructor/poll" /></para>
 /// </summary>
-[TlObject(0x966e2dbf)]
+[TlObject(0xb8425be9)]
 public sealed partial class TPoll : IPoll
 {
-    public uint ConstructorId => 0x966e2dbf;
+    public uint ConstructorId => 0xb8425be9;
     /// <summary>
     /// ID of the poll
     /// </summary>

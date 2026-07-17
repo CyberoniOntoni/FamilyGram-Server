@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// List item
 /// <para>See <a href="https://corefork.telegram.org/constructor/pageListItemText" /></para>
 /// </summary>
-[TlObject(0x2f58683c)]
+[TlObject(0xb92fb6cd)]
 public sealed partial class TPageListItemText : IPageListItem
 {
-    public uint ConstructorId => 0x2f58683c;
+    public uint ConstructorId => 0xb92fb6cd;
     /// <summary>
     /// Text
     /// See <a href="https://corefork.telegram.org/type/RichText" />

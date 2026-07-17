@@ -10,44 +10,35 @@ public static class SerializerObjectMappings
     private static readonly ConcurrentDictionary<uint, Func<IObject>> TypeToConstructors = new();
 
     /// <summary>
-    /// Layer-224 constructor IDs that deserialize into the current (layer-228) types
-    /// because the payload is flag-compatible (new fields only behind unset flag bits,
-    /// or request optional fields at the end of the wire layout).
+    /// Layer-228 constructor IDs → current Latest (224 wire) types when bit-compatible.
+    /// Session-server cannot deserialize 228 IDs; keep wire IDs at 224 until it is rebuilt.
     /// </summary>
     public static readonly IReadOnlyDictionary<uint, uint> LegacyToLatestConstructorIds =
         new Dictionary<uint, uint>
         {
-            // Entities
-            { 0x3ae56482, 0x7600b9d3 }, // message
-            { 0x1c32b11c, 0xd49f34c6 }, // channel
-            { 0xe4e0b29d, 0xa04e8d3a }, // channelFull
-            { 0x96eaa5eb, 0x60fe3294 }, // draftMessage
-            { 0xb8425be9, 0x966e2dbf }, // poll
-            { 0x31774388, 0xb1b8cc83 }, // user
-            { 0xcd64636c, 0x033ed001 }, // connectedBot
-            { 0x11dfa986, 0x7cb34d79 }, // updateBotChatInviteRequester
-            { 0x9bb2636d, 0x3fc18057 }, // inputStorePaymentAuthCode
-            { 0xe0955a3c, 0xf8827ebf }, // auth.sentCodePaymentRequired
-            // pre-223 message still seen in persisted blobs
-            { 0x9cb490e9, 0x7600b9d3 },
-            // Requests (bit-compatible optional fields)
-            { 0x545cd15a, 0xfef48f62 }, // messages.sendMessage
-            { 0x51e842e1, 0xb106e66c }, // messages.editMessage
-            { 0x83557dba, 0xa423bb51 }, // messages.editInlineBotMessage
-            { 0x54ae308e, 0xad0fa15c }, // messages.saveDraft
-            { 0x4bc6589a, 0x6126a43c }, // messages.searchGlobal
-            { 0xfd426afe, 0xdaecc589 }, // messages.composeMessageWithAI
-            { 0x11f812d8, 0x05f58d0f }, // contacts.search
-            { 0x4c2985b6, 0x0ecc2618 }, // channels.toggleJoinRequest
-            // Request IDs whose return type also changed — still accept the old request wire
-            { 0x24b524c5, 0x7f6a1e22 }, // channels.joinChannel
-            { 0x6c50051c, 0xde91436e }, // messages.importChatInvite
+            { 0x7600b9d3, 0x3ae56482 }, // message 228 → 224
+            { 0xd49f34c6, 0x1c32b11c }, // channel
+            { 0xa04e8d3a, 0xe4e0b29d }, // channelFull
+            { 0x60fe3294, 0x96eaa5eb }, // draftMessage
+            { 0x966e2dbf, 0xb8425be9 }, // poll
+            { 0xb1b8cc83, 0x31774388 }, // user
+            { 0x033ed001, 0xcd64636c }, // connectedBot
+            { 0x7cb34d79, 0x11dfa986 }, // updateBotChatInviteRequester
+            { 0x3fc18057, 0x9bb2636d }, // inputStorePaymentAuthCode
+            { 0xf8827ebf, 0xe0955a3c }, // auth.sentCodePaymentRequired
+            { 0x9cb490e9, 0x3ae56482 }, // pre-223 message
+            { 0xfef48f62, 0x545cd15a }, // messages.sendMessage
+            { 0xb106e66c, 0x51e842e1 }, // messages.editMessage
+            { 0xa423bb51, 0x83557dba }, // messages.editInlineBotMessage
+            { 0xad0fa15c, 0x54ae308e }, // messages.saveDraft
+            { 0x6126a43c, 0x4bc6589a }, // messages.searchGlobal
+            { 0xdaecc589, 0xfd426afe }, // messages.composeMessageWithAI
+            { 0x05f58d0f, 0x11f812d8 }, // contacts.search
+            { 0x0ecc2618, 0x4c2985b6 }, // channels.toggleJoinRequest
+            { 0x7f6a1e22, 0x24b524c5 }, // channels.joinChannel
+            { 0xde91436e, 0x6c50051c }, // messages.importChatInvite
         };
 
-    /// <summary>
-    /// Request constructor IDs that should dispatch to the same handler as the latest ID.
-    /// Includes structural-change request IDs that we still accept via alias deserialization.
-    /// </summary>
     public static readonly IReadOnlyList<uint> DualRegisteredRequestLegacyIds =
         LegacyToLatestConstructorIds.Keys.ToList();
 
@@ -67,7 +58,6 @@ public static class SerializerObjectMappings
             {
                 TypeMappingDict.TryAdd(attr.ConstructorId, type);
 
-                // TVector need process using other ways
                 if (attr.ConstructorId != VectorConstructorId)
                 {
                     TypeToConstructors.TryAdd(attr.ConstructorId,
@@ -83,12 +73,6 @@ public static class SerializerObjectMappings
         RegisterLegacyConstructorAliases();
     }
 
-    /// <summary>
-    /// Some persisted blobs and older clients use prior-layer constructor IDs.
-    /// New layers add fields only behind unused flag bits (for the entries in
-    /// <see cref="LegacyToLatestConstructorIds"/>), so the current Deserialize
-    /// routine is bit-compatible — we just route the old id to the current type.
-    /// </summary>
     private static void RegisterLegacyConstructorAliases()
     {
         foreach (var (legacyId, latestId) in LegacyToLatestConstructorIds)
@@ -100,15 +84,6 @@ public static class SerializerObjectMappings
 
             AliasConstructor(legacyId, type);
         }
-
-        // Structural wire changes — still map so clients don't hard-fail; payloads
-        // without the new required leading fields may not round-trip correctly.
-        AliasConstructor(0xc27ac8c7, typeof(TBotCommand)); // botCommand layer 224 (no flags)
-        AliasConstructor(0x9a8ae1e1, typeof(TPageBlockOrderedList));
-        AliasConstructor(0x25e073fc, typeof(TPageListItemBlocks));
-        AliasConstructor(0xb92fb6cd, typeof(TPageListItemText));
-        AliasConstructor(0x98dd8936, typeof(TPageListOrderedItemBlocks));
-        AliasConstructor(0x5e068047, typeof(TPageListOrderedItemText));
     }
 
     private static void AliasConstructor(uint legacyConstructorId, Type currentType)

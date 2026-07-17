@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// Ordered list of IV blocks
 /// <para>See <a href="https://corefork.telegram.org/constructor/pageBlockOrderedList" /></para>
 /// </summary>
-[TlObject(0x1fd6f6c1)]
+[TlObject(0x9a8ae1e1)]
 public sealed partial class TPageBlockOrderedList : IPageBlock
 {
-    public uint ConstructorId => 0x1fd6f6c1;
+    public uint ConstructorId => 0x9a8ae1e1;
     /// <summary>
     /// List items
     /// See <a href="https://corefork.telegram.org/type/PageListOrderedItem" />

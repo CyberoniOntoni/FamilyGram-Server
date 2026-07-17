@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// Ordered list of text items
 /// <para>See <a href="https://corefork.telegram.org/constructor/pageListOrderedItemText" /></para>
 /// </summary>
-[TlObject(0x15031189)]
+[TlObject(0x5e068047)]
 public sealed partial class TPageListOrderedItemText : IPageListOrderedItem
 {
-    public uint ConstructorId => 0x15031189;
+    public uint ConstructorId => 0x5e068047;
     /// <summary>
     /// Number of element within ordered list
     /// </summary>

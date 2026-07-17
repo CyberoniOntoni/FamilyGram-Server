@@ -8,10 +8,10 @@ namespace MyTelegram.Schema.Messages;
 /// <remarks>
 /// Access: [User ] [Bot ] [Anonymous ]
 /// </remarks>
-[TlObject(0xdaecc589)]
+[TlObject(0xfd426afe)]
 public sealed partial class RequestComposeMessageWithAI : IRequest<MyTelegram.Schema.Messages.IComposedMessageWithAI>
 {
-    public uint ConstructorId => 0xdaecc589;
+    public uint ConstructorId => 0xfd426afe;
 
     public int Flags { get; set; }
 

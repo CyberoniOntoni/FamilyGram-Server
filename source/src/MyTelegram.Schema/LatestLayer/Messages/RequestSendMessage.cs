@@ -84,10 +84,10 @@ namespace MyTelegram.Schema.Messages;
 /// <remarks>
 /// Access: [User ✔] [Bot ✔] [Anonymous ✖]
 /// </remarks>
-[TlObject(0xfef48f62)]
+[TlObject(0x545cd15a)]
 public sealed partial class RequestSendMessage : IRequest<MyTelegram.Schema.IUpdates>
 {
-    public uint ConstructorId => 0xfef48f62;
+    public uint ConstructorId => 0x545cd15a;
 
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>

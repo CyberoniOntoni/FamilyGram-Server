@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// Full info about a <a href="https://corefork.telegram.org/api/channel#channels">channel</a>, <a href="https://corefork.telegram.org/api/channel#supergroups">supergroup</a> or <a href="https://corefork.telegram.org/api/channel#gigagroups">gigagroup</a>.When updating the <a href="https://corefork.telegram.org/api/peers">local peer database »</a>, all fields from the newly received constructor take priority over the old constructor cached locally (including by removing fields that aren't set in the new constructor).
 /// <para>See <a href="https://corefork.telegram.org/constructor/channelFull" /></para>
 /// </summary>
-[TlObject(0xa04e8d3a)]
+[TlObject(0xe4e0b29d)]
 public sealed partial class TChannelFull : IChatFull, ILayeredChannelFull
 {
-    public uint ConstructorId => 0xa04e8d3a;
+    public uint ConstructorId => 0xe4e0b29d;
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>
     /// </summary>
