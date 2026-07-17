@@ -1,8 +1,10 @@
 # API Layer 228 upgrade
 
-**Status:** core dual-layer + high-impact web methods  
-**Production target layer:** **228** (`Layers.LayerLatest`)  
-**Min supported:** **224** (request dual-registration + legacy constructor aliases)
+**Status:** core dual-layer + high-impact web methods; **wire IDs held at 224** for closed session-server  
+**Production wire layer:** **224** (`Layers.LayerLatest`) — session-server compatible  
+**Product target layer:** **228** (`Layers.LayerTarget`) when session-server is rebuilt with FamilyGram Schema  
+**Min supported:** **224** (request dual-registration + legacy constructor aliases)  
+**Upstream forks:** see [UPSTREAM_FORKS.md](./UPSTREAM_FORKS.md)
 
 ## What landed
 

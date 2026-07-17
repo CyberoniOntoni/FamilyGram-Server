@@ -361,15 +361,19 @@ export REGISTRY_URL="ghcr.io/cyberoniontoni/familygram-server"
 
 ## Clients
 
-| Platform | Repository |
+| Platform | Repository (`layer228` branch unless noted) |
 |----------|------------|
-| Android | https://github.com/glebxdlolreal/testgram-android |
+| Android | https://github.com/CyberoniOntoni/testgram-android |
 | Desktop (FamilyGram) | https://github.com/CyberoniOntoni/familygram-desktop — see [docs/BUILD-testgram.md](https://github.com/CyberoniOntoni/familygram-desktop/blob/main/docs/BUILD-testgram.md) |
 | **Web + Server (FamilyGram)** | **https://github.com/CyberoniOntoni/familygram** — unified Docker stack (recommended) |
 | Web source only | https://github.com/CyberoniOntoni/familygram-web — telegram-tt fork |
-| iOS | https://github.com/loyldg/mytelegram-iOS |
-| WebK | https://github.com/loyldg/mytelegram-webk |
-| WebA | https://github.com/loyldg/mytelegram-weba (legacy; superseded by familygram-web for Testgram) |
+| iOS | https://github.com/CyberoniOntoni/mytelegram-iOS |
+| WebK | https://github.com/CyberoniOntoni/mytelegram-webk |
+| WebA (legacy) | https://github.com/CyberoniOntoni/mytelegram-weba — superseded by familygram-web |
+| TDLib | https://github.com/CyberoniOntoni/mytelegram-td |
+| Bot API | https://github.com/CyberoniOntoni/mytelegram-bot-api |
+
+**Note:** Production still pulls closed-source `mytelegram/mytelegram-session-server` and `mytelegram/mytelegram-file-server`. Wire API layer stays **224** until those are replaced — see [docs/UPSTREAM_FORKS.md](docs/UPSTREAM_FORKS.md) and [docs/LAYER_228_UPGRADE.md](docs/LAYER_228_UPGRADE.md).
 
 ### Configure Clients
 1. Clone the client source code.
