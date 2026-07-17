@@ -22,6 +22,16 @@ public class MtpHelper(IAesHelper aesHelper) : IMtpHelper, ITransientDependency
         messageKey.CopyTo(outputBuffer.Slice(8, 16));
     }
 
+    public int Decrypt(byte[] authKeyData, ReadOnlySpan<byte> msgKey, ReadOnlySpan<byte> encryptedData, Span<byte> destination)
+    {
+        // Client → server: x = 0 (toServer = true in CalcAesKey)
+        var aesKey = new byte[32];
+        Span<byte> aesIv = stackalloc byte[32];
+        CalcAesKey(authKeyData, msgKey, toServer: true, aesKey, aesIv);
+        aesHelper.DecryptIge(encryptedData, aesKey, aesIv, destination[..encryptedData.Length]);
+        return encryptedData.Length;
+    }
+
     public void CalcTempAesKeyData(byte[] newNonce,
         byte[] serverNonce, Span<byte> aesKey, Span<byte> aesIv)
     {

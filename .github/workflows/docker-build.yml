@@ -1,8 +1,7 @@
 name: Build and Push Docker Images
 
-# Builds the .NET services this fork has source for (including open file-server),
-# plus the Python verification bot, and publishes them to GHCR.
-# session-server remains closed-source (upstream Docker Hub only).
+# Builds the .NET services this fork has source for (including open file-server
+# and open session-server MVP), plus the Python verification bot, to GHCR.
 
 on:
   push:
@@ -59,6 +58,9 @@ jobs:
             context: source
           - name: mytelegram-file-server
             dockerfile: build/docker/Dockerfile-mytelegram-file-server
+            context: source
+          - name: mytelegram-session-server
+            dockerfile: build/docker/Dockerfile-mytelegram-session-server
             context: source
           - name: familygram-server-bot
             dockerfile: bot/Dockerfile
