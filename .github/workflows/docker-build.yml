@@ -7,7 +7,8 @@ name: Build and Push Docker Images
 
 on:
   push:
-    branches: [dev]
+    # dev = production images (:latest). layer228 = bleeding-edge MTProto layer 228.
+    branches: [dev, layer228]
     tags: ["v*.*.*"]
     paths:
       - "source/**"
@@ -15,7 +16,7 @@ on:
       - "bot/**"
       - ".github/workflows/docker-build.yml"
   pull_request:
-    branches: [dev]
+    branches: [dev, layer228]
     paths:
       - "source/**"
       - "build/docker/**"
@@ -25,7 +26,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAMESPACE: ${{ github.repository }}
+  # Lowercase path matches docker/compose FamilyGramServerRegistry
+  # (ghcr.io/cyberoniontoni/familygram-server/<service>:<tag>).
+  IMAGE_NAMESPACE: cyberoniontoni/familygram-server
 
 jobs:
   build:
@@ -84,8 +87,11 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service.name }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=${{ steps.version.outputs.version }},enable={{is_default_branch}}
+            # Production images only from dev (installer main/dev → :latest)
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/dev' }}
+            type=raw,value=${{ steps.version.outputs.version }},enable=${{ github.ref == 'refs/heads/dev' }}
+            # Feature branches → tag equals branch name (installer REPO_BRANCH=layer228 → :layer228)
+            type=ref,event=branch
             type=sha,format=short
             type=ref,event=tag
 
