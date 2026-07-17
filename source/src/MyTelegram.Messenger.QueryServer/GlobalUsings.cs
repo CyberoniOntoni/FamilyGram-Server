@@ -31,6 +31,7 @@ global using MyTelegram.Messenger.Converters.ConverterServices.Channels;
 global using MyTelegram.Messenger.Converters.ConverterServices.Messages;
 global using MyTelegram.Messenger.DomainEventHandlers;
 global using MyTelegram.Messenger.QueryServer.Services;
+global using MyTelegram.Messenger.Services;
 global using MyTelegram.Queries;
 global using MyTelegram.ReadModel.Interfaces;
 global using MyTelegram.Schema;

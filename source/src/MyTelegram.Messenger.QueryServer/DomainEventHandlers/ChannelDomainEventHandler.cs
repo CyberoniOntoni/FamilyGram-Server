@@ -629,7 +629,8 @@ public class ChannelDomainEventHandler(
             Date = DateTime.UtcNow.ToTimestamp()
         };
 
-        await SendRpcMessageToClientAsync(domainEvent.AggregateEvent.RequestInfo, updates);
+        await SendRpcMessageToClientAsync(domainEvent.AggregateEvent.RequestInfo,
+            ChatInviteJoinResultHelper.WrapForRpc(updates, domainEvent.AggregateEvent.RequestInfo.Layer));
 
         // After joining a supergroup, a service message will be sent, so there is no need to notify current joiner.
         // After joining a channel, no service message will be sent, so it is necessary to notify the current joiner.
@@ -700,7 +701,8 @@ public class ChannelDomainEventHandler(
                 Date = DateTime.UtcNow.ToTimestamp()
             };
 
-            await SendRpcMessageToClientAsync(domainEvent.AggregateEvent.RequestInfo, updates);
+            await SendRpcMessageToClientAsync(domainEvent.AggregateEvent.RequestInfo,
+                ChatInviteJoinResultHelper.WrapForRpc(updates, domainEvent.AggregateEvent.RequestInfo.Layer));
         }
     }
 
@@ -721,7 +723,8 @@ public class ChannelDomainEventHandler(
                 Date = DateTime.UtcNow.ToTimestamp()
             };
 
-            await SendRpcMessageToClientAsync(domainEvent.AggregateEvent.RequestInfo, updates);
+            await SendRpcMessageToClientAsync(domainEvent.AggregateEvent.RequestInfo,
+                ChatInviteJoinResultHelper.WrapForRpc(updates, domainEvent.AggregateEvent.RequestInfo.Layer));
         }
     }
 

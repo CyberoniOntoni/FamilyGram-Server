@@ -36,7 +36,9 @@ public partial class MessageDomainEventHandler
             tUpdates.Users.Add(user);
         }
 
-        await SendRpcMessageToClientAsync(aggregateEvent.RequestInfo, updates, pts: aggregateEvent.MessageItem.Pts);
+        await SendRpcMessageToClientAsync(aggregateEvent.RequestInfo,
+            ChatInviteJoinResultHelper.WrapForRpc(updates, aggregateEvent.RequestInfo.Layer),
+            pts: aggregateEvent.MessageItem.Pts);
         await PushUpdatesToPeerAsync(aggregateEvent.RequestInfo.UserId.ToUserPeer(), updates,
             excludeAuthKeyId: aggregateEvent.RequestInfo.PermAuthKeyId);
 
@@ -67,7 +69,9 @@ public partial class MessageDomainEventHandler
         await UpdateChannelAndUserAsync(aggregateEvent.RequestInfo, updates, aggregateEvent.MessageItem.ToPeer.PeerId,
             [aggregateEvent.RequestInfo.UserId]);
 
-        await SendRpcMessageToClientAsync(aggregateEvent.RequestInfo, updates, aggregateEvent.RequestInfo.UserId);
+        await SendRpcMessageToClientAsync(aggregateEvent.RequestInfo,
+            ChatInviteJoinResultHelper.WrapForRpc(updates, aggregateEvent.RequestInfo.Layer),
+            aggregateEvent.RequestInfo.UserId);
 
         var selfOtherDeviceUpdates =
             joinChannelConverterService.ToJoinChannelUpdates(aggregateEvent.RequestInfo.UserId, aggregateEvent, 0);

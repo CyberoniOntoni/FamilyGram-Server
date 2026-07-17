@@ -1,6 +1,6 @@
 # API Layer 228 upgrade
 
-**Status:** implemented (core dual-layer path)  
+**Status:** core dual-layer + high-impact web methods  
 **Production target layer:** **228** (`Layers.LayerLatest`)  
 **Min supported:** **224** (request dual-registration + legacy constructor aliases)
 
@@ -9,33 +9,42 @@
 | Area | Change |
 |------|--------|
 | `Layers.LayerLatest` | **228** |
-| Schema constructor IDs | 26 ID-changed types updated to 228 (message, user, channel, sendMessage, …) |
-| New optional fields | `rich_message`, `guestchat_via_from`, community/guard/bot flags, poll countries, … |
-| New types | `RichMessage` / `InputRichMessage` / `InputRichFile*`, `messages.ChatInviteJoinResult*` |
-| Deserialize aliases | `SerializerObjectMappings.LegacyToLatestConstructorIds` maps 224 → 228 types |
-| Handler dual-register | `HandlerHelper` also binds 224 request IDs to Latest handlers |
-| Web | `LAYER = 228`; `familygramTlCompat` no longer rewrites constructors |
+| Schema constructor IDs | 26 ID-changed types updated to 228 |
+| New optional fields | `rich_message`, `guestchat_via_from`, community/guard flags, poll countries, … |
+| Rich message types | `RichMessage` / `InputRichMessage*` / `InputRichFile*` |
+| Join result types | `messages.ChatInviteJoinResult*` + **RPC wrap** for layer ≥ 228 |
+| Dual-layer plumbing | legacy constructor aliases + dual handler registration |
+| `messages.getRichMessage` | Handler (reuses message store) |
+| `aicompose.*` | Schema + stubs (empty tones / synthetic create) |
+| `account.get/updateWebBrowserSettings` | Schema + default empty settings |
 
-Vendored schema reference: `docs/api.tl.228` (from tdesktop `// LAYER 228`).
+Vendored schema: `docs/api.tl.228`.
 
-## What still remains
+## Still remaining (lower priority / not used by FamilyGram Web core)
 
-1. **Full codegen** of ~120 *new* methods/constructors (`communities.*`, `ephemeral.*`, `aicompose.*`, web-browser settings, …) — currently unhandled → `NotImplementedException` / unknown objectId.
-2. **Structural page-list / botCommand** multi-layer response converters for pure-224 clients (server emits 228 wire forms).
-3. **`channels.joinChannel` / `messages.importChatInvite` return type** is still `Updates` on the handler path (async saga). Layer 228 expects `messages.ChatInviteJoinResult`; wrap saga RPC replies when that path is next touched.
-4. **CI image tags** `0.xx.228.y` and staging QA matrix.
+| Namespace | Methods | Status |
+|-----------|---------|--------|
+| `communities.*` | create, getJoinedCommunities, peer links, … | not implemented |
+| `ephemeral.*` | sendMessage, deleteMessage, … | not implemented |
+| `messages.composeRichMessageWithAI` / `translateRichMessage` | AI rich compose | not implemented |
+| `bots.*` access settings / join chat results | bot guest chat | not implemented |
+| `stats.getPollStats` | poll stats | not implemented |
+| Full AI compose backend | real LLM tones | stubs only |
 
-## Acceptance (core)
+Unknown methods still fail as unsupported objectId / `NotImplementedException`.
 
-- [x] Server advertises / implements Latest = 228  
-- [x] `messages.sendMessage` accepts **both** `#545cd15a` (224) and `#fef48f62` (228)  
-- [x] History messages serialize as `message#7600b9d3`  
-- [x] Web default `LAYER = 228`  
-- [ ] Full new API surface stubs  
-- [ ] Join/import return-type wrap for 228  
-- [ ] Production deploy + regression suite green  
+## Acceptance
+
+- [x] Server Latest = 228  
+- [x] Dual `messages.sendMessage` constructor IDs  
+- [x] History `message#7600b9d3`  
+- [x] Web `LAYER = 228`  
+- [x] Join/import RPC returns `chatInviteJoinResultOk` for layer 228  
+- [x] `messages.getRichMessage` / `aicompose.getTones` / web browser settings respond  
+- [ ] Full new API surface  
+- [ ] Production merge from `layer228` branch after QA  
 
 ## Do not
 
-- Ship only a constant bump without dual-ID registration (done together here).  
+- Ship only a constant bump without dual-ID registration.  
 - Force Web back to 224 while Latest is 228 without re-enabling compat patches.

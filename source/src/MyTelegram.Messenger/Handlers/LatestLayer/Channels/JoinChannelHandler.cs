@@ -32,9 +32,9 @@ internal sealed class JoinChannelHandler(
     IQueryProcessor queryProcessor,
     IAccessHashHelper accessHashHelper,
     IMongoDatabase mongoDatabase)
-    : RpcResultObjectHandler<RequestJoinChannel, IUpdates>
+    : RpcResultObjectHandler<RequestJoinChannel, MyTelegram.Schema.Messages.IChatInviteJoinResult>
 {
-    protected override async Task<IUpdates> HandleCoreAsync(IRequestInput input, RequestJoinChannel obj)
+    protected override async Task<MyTelegram.Schema.Messages.IChatInviteJoinResult> HandleCoreAsync(IRequestInput input, RequestJoinChannel obj)
     {
         if (obj.Channel is TInputChannel inputChannel)
         {

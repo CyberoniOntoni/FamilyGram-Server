@@ -26,7 +26,7 @@ namespace MyTelegram.Schema.Messages;
 /// Access: [User ✔] [Bot ✖] [Anonymous ✖]
 /// </remarks>
 [TlObject(0xde91436e)]
-public sealed partial class RequestImportChatInvite : IRequest<MyTelegram.Schema.IUpdates>
+public sealed partial class RequestImportChatInvite : IRequest<MyTelegram.Schema.Messages.IChatInviteJoinResult>
 {
     public uint ConstructorId => 0xde91436e;
 

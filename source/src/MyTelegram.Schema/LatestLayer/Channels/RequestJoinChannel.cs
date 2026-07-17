@@ -27,7 +27,7 @@ namespace MyTelegram.Schema.Channels;
 /// Access: [User ✔] [Bot ✖] [Anonymous ✖]
 /// </remarks>
 [TlObject(0x7f6a1e22)]
-public sealed partial class RequestJoinChannel : IRequest<MyTelegram.Schema.IUpdates>
+public sealed partial class RequestJoinChannel : IRequest<MyTelegram.Schema.Messages.IChatInviteJoinResult>
 {
     public uint ConstructorId => 0x7f6a1e22;
 
