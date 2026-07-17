@@ -27,7 +27,7 @@
     <!--<Protobuf Include="Protos\chatservice.proto" />-->
     <Protobuf Include="Protos\chatmemberloaderservice.proto" GrpcServices="Server" />
     <Protobuf Include="Protos\idgeneratorservice.proto" GrpcServices="Client" />
-    <Protobuf Include="Protos\mediaservice.proto" GrpcServices="Client" />
+    <Protobuf Include="Protos\mediaservice.proto" GrpcServices="Both" />
   </ItemGroup>
 
   <ItemGroup>

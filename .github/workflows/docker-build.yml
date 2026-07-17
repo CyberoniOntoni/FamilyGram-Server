@@ -1,9 +1,8 @@
 name: Build and Push Docker Images
 
-# Builds the six .NET services this fork has source for, plus the Python
-# verification bot, and publishes them to GHCR. session-server and file-server
-# are not part of this repo (see docker/compose/docker-compose.yml) and keep
-# pulling from the upstream MyTelegram registry instead.
+# Builds the .NET services this fork has source for (including open file-server),
+# plus the Python verification bot, and publishes them to GHCR.
+# session-server remains closed-source (upstream Docker Hub only).
 
 on:
   push:
@@ -57,6 +56,9 @@ jobs:
             context: source
           - name: mytelegram-data-seeder
             dockerfile: build/docker/Dockerfile-mytelegram-data-seeder
+            context: source
+          - name: mytelegram-file-server
+            dockerfile: build/docker/Dockerfile-mytelegram-file-server
             context: source
           - name: familygram-server-bot
             dockerfile: bot/Dockerfile

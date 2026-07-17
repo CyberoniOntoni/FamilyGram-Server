@@ -7,7 +7,7 @@ Inventory of MyTelegram / client upstreams FamilyGram relies on, what is forked 
 | Component | Image | Notes |
 |-----------|-------|--------|
 | **session-server** | `mytelegram/mytelegram-session-server` | Not in `loyldg/mytelegram`. Native single-file binary with **embedded schema**. Rejects layer-228 constructor IDs (`messages.sendMessage#fef48f62`, `user#b1b8cc83`). |
-| **file-server** | `mytelegram/mytelegram-file-server` | Not in public MyTelegram monorepo. |
+| **file-server** (legacy) | `mytelegram/mytelegram-file-server` | Replaced by open `MyTelegram.FileServer` in FamilyGram-Server (`source/src/MyTelegram.FileServer`). |
 
 Until these are reimplemented or Pro sources obtained, FamilyGram-Server keeps **wire layer 224** (`Layers.LayerLatest = 224`, `LayerTarget = 228`). See [LAYER_228_UPGRADE.md](./LAYER_228_UPGRADE.md).
 
