@@ -142,8 +142,16 @@ internal sealed class ConfirmCallHandler(
             currentDate,
             connections);
 
-        var users = await userConverterService.GetUserListAsync(input, new List<long> { session.CallerId, session.CalleeId }, false, false, input.Layer);
-        var usersVector = new TVector<MyTelegram.Schema.IUser>(users);
+        var participantIds = new List<long> { session.CallerId, session.CalleeId };
+        var usersForCaller = await userConverterService.GetUserListAsync(input, participantIds, false, false, input.Layer);
+        var usersForCallee = await CallUserListHelper.GetUserListForViewerAsync(
+            userConverterService,
+            input,
+            session.CalleeId,
+            participantIds,
+            input.Layer,
+            session.CalleePermAuthKeyId);
+        var usersVectorForCaller = new TVector<MyTelegram.Schema.IUser>(usersForCaller);
 
         var updatePhoneCall = new MyTelegram.Schema.TUpdatePhoneCall { PhoneCall = phoneCallForCallee };
 
@@ -151,7 +159,7 @@ internal sealed class ConfirmCallHandler(
         var calleeUpdates = new TUpdates
         {
             Updates = new TVector<IUpdate> { updatePhoneCall },
-            Users = usersVector,
+            Users = new TVector<IUser>(usersForCallee),
             Chats = new TVector<IChat>(),
             Date = currentDate
         };
@@ -168,7 +176,7 @@ internal sealed class ConfirmCallHandler(
         return new MyTelegram.Schema.Phone.TPhoneCall
         {
             PhoneCall = phoneCallForCaller,
-            Users = usersVector
+            Users = usersVectorForCaller
         };
     }
 

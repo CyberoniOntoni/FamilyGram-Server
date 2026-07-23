@@ -74,18 +74,32 @@ internal sealed class DiscardCallHandler(
             Video = video
         };
 
-        var users = await userConverterService.GetUserListAsync(input, new List<long> { session.CallerId, session.CalleeId }, false, false, input.Layer);
-        var usersVector = new TVector<MyTelegram.Schema.IUser>(users);
+        var participantIds = new List<long> { session.CallerId, session.CalleeId };
+        // Self response: Self flags relative to discarder.
+        var usersForSelf = await userConverterService.GetUserListAsync(input, participantIds, false, false, input.Layer);
+        var usersVector = new TVector<MyTelegram.Schema.IUser>(usersForSelf);
 
         var updatePhoneCall = new TUpdatePhoneCall { PhoneCall = discardedCall };
 
         var otherUserId = input.UserId == session.CallerId ? session.CalleeId : session.CallerId;
+        var otherPermAuthKeyId = otherUserId == session.CallerId
+            ? session.CallerPermAuthKeyId
+            : session.CalleePermAuthKeyId;
+        // Push to peer: Self flags MUST be relative to the recipient, or the web client
+        // marks the contact as isSelf and shows the chat as "Saved messages".
+        var usersForOther = await CallUserListHelper.GetUserListForViewerAsync(
+            userConverterService,
+            input,
+            otherUserId,
+            participantIds,
+            input.Layer,
+            otherPermAuthKeyId);
         var otherPeer = new Peer(PeerType.User, otherUserId);
         await objectMessageSender.PushMessageToPeerAsync(otherPeer,
             new TUpdates
             {
                 Updates = new TVector<IUpdate> { updatePhoneCall },
-                Users = usersVector,
+                Users = new TVector<IUser>(usersForOther),
                 Chats = new TVector<IChat>(),
                 Date = currentDate
             });

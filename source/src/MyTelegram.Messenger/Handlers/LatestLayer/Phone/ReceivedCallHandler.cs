@@ -73,19 +73,20 @@ internal sealed class ReceivedCallHandler(
             Protocol = PhoneCallProtocolHelper.FromLibraryVersions(session.CallerLibraryVersions),
             Video = session.Video
         };
-        var users = await userConverterService.GetUserListAsync(
+        var usersForCaller = await CallUserListHelper.GetUserListForViewerAsync(
+            userConverterService,
             input,
+            session.CallerId,
             [session.CallerId, session.CalleeId],
-            false,
-            false,
-            input.Layer);
+            input.Layer,
+            session.CallerPermAuthKeyId);
 
         await objectMessageSender.PushMessageToPeerAsync(
             new Peer(PeerType.User, session.CallerId),
             new TUpdates
             {
                 Updates = new TVector<IUpdate> { new TUpdatePhoneCall { PhoneCall = waitingCall } },
-                Users = new TVector<IUser>(users),
+                Users = new TVector<IUser>(usersForCaller),
                 Chats = new TVector<IChat>(),
                 Date = currentDate
             });

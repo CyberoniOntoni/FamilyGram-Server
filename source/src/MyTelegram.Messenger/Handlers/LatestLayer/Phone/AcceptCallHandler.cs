@@ -78,8 +78,16 @@ internal sealed class AcceptCallHandler(
             obj.Protocol,
             currentDate);
 
-        var users = await userConverterService.GetUserListAsync(input, new List<long> { session.CallerId, session.CalleeId }, false, false, input.Layer);
-        var usersVector = new TVector<MyTelegram.Schema.IUser>(users);
+        var participantIds = new List<long> { session.CallerId, session.CalleeId };
+        var usersForCallee = await userConverterService.GetUserListAsync(input, participantIds, false, false, input.Layer);
+        var usersForCaller = await CallUserListHelper.GetUserListForViewerAsync(
+            userConverterService,
+            input,
+            session.CallerId,
+            participantIds,
+            input.Layer,
+            session.CallerPermAuthKeyId);
+        var usersVectorForCallee = new TVector<MyTelegram.Schema.IUser>(usersForCallee);
 
         var updatePhoneCall = new MyTelegram.Schema.TUpdatePhoneCall { PhoneCall = phoneCallAcceptedForCaller };
 
@@ -87,7 +95,7 @@ internal sealed class AcceptCallHandler(
         var callerUpdates = new TUpdates
         {
             Updates = new TVector<IUpdate> { updatePhoneCall },
-            Users = usersVector,
+            Users = new TVector<IUser>(usersForCaller),
             Chats = new TVector<IChat>(),
             Date = currentDate
         };
@@ -103,7 +111,7 @@ internal sealed class AcceptCallHandler(
         return new MyTelegram.Schema.Phone.TPhoneCall
         {
             PhoneCall = phoneCallWaitingForCallee,
-            Users = usersVector
+            Users = usersVectorForCallee
         };
     }
 

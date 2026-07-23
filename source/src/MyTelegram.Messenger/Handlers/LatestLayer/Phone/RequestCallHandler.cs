@@ -114,14 +114,23 @@ internal sealed class RequestCallHandler(
             Video = obj.Video
         };
 
-        var users = await userConverterService.GetUserListAsync(input, new List<long> { input.UserId, calleeId }, false, false, input.Layer);
-        var usersVector = new TVector<MyTelegram.Schema.IUser>(users);
+        var participantIds = new List<long> { input.UserId, calleeId };
+        var usersForCaller = await userConverterService.GetUserListAsync(input, participantIds, false, false, input.Layer);
+        var usersForCallee = await CallUserListHelper.GetUserListForViewerAsync(
+            userConverterService,
+            input,
+            calleeId,
+            participantIds,
+            input.Layer,
+            session.CalleePermAuthKeyId);
+        var usersVectorForCaller = new TVector<MyTelegram.Schema.IUser>(usersForCaller);
+        var usersVectorForCallee = new TVector<MyTelegram.Schema.IUser>(usersForCallee);
 
         var updatePhoneCall = new MyTelegram.Schema.TUpdatePhoneCall { PhoneCall = phoneCallRequested };
         var incomingCallUpdates = new TUpdates
         {
             Updates = new TVector<IUpdate> { updatePhoneCall },
-            Users = usersVector,
+            Users = usersVectorForCallee,
             Chats = new TVector<IChat>(),
             Date = currentDate
         };
@@ -130,7 +139,7 @@ internal sealed class RequestCallHandler(
         await objectMessageSender.PushMessageToPeerAsync(
             calleePeer,
             incomingCallUpdates,
-            pushData: CreateIncomingCallPushData(input.UserId, calleeId, callId, calleeAccessHash, incomingCallUpdates, users));
+            pushData: CreateIncomingCallPushData(input.UserId, calleeId, callId, calleeAccessHash, incomingCallUpdates, usersForCallee));
 
         // Do not post a chat service message here. Telegram-style history only adds a
         // messageActionPhoneCall when the call ends (discard). Intermediate bubbles without
@@ -139,7 +148,7 @@ internal sealed class RequestCallHandler(
         return new MyTelegram.Schema.Phone.TPhoneCall
         {
             PhoneCall = phoneCallWaiting,
-            Users = usersVector
+            Users = usersVectorForCaller
         };
     }
 
