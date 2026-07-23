@@ -77,6 +77,12 @@ public class DifferenceConverterService(
             unreadCount = 0;
         }
 
+        // pts read-model / in-memory cache can lag behind HiLo jumps after restarts.
+        // Clients treat difference.state.pts as the new local pts — if we return a
+        // stale value lower than the updates we just delivered, the client stays in
+        // a permanent pts gap and never accepts later updateNewMessage pushes.
+        var statePts = ResolveDifferencePts(pts?.Pts ?? 0, cachedPts, updateList, output.MessageList);
+
         var layeredUpdates = updateList.Select(p => updatesResponseService.ToLayeredData(output.SelfUserId, request.AccessHashKeyId, p, layer));
 
         // Filter out updates with null messages or TMessageService with null Action
@@ -91,23 +97,14 @@ public class DifferenceConverterService(
                 NewMessages = new TVector<IMessage>(messageList ?? []),
                 OtherUpdates = new TVector<IUpdate>(layeredUpdates?.Where(u => u != null) ?? []),
                 Users = new TVector<IUser>(userList ?? []),
-                IntermediateState = pts == null
-                    ? new TState
-                    {
-                        Date = DateTime.UtcNow.ToTimestamp(),
-                        Qts = qts,
-                        Pts = pts?.Pts ?? 1,
-                        UnreadCount = unreadCount,
-                        Seq = 1
-                    }
-                    : objectMapper.Map<IPtsReadModel, TState>(pts) ?? new TState
-                    {
-                        Date = DateTime.UtcNow.ToTimestamp(),
-                        Qts = qts,
-                        Pts = pts?.Pts ?? 1,
-                        UnreadCount = unreadCount,
-                        Seq = 1
-                    }
+                IntermediateState = new TState
+                {
+                    Date = pts?.Date > 0 ? pts.Date : DateTime.UtcNow.ToTimestamp(),
+                    Qts = qts,
+                    Pts = statePts > 0 ? statePts : 1,
+                    UnreadCount = unreadCount,
+                    Seq = 1
+                }
             };
 
             return differenceSlice;
@@ -122,31 +119,59 @@ public class DifferenceConverterService(
             NewMessages = new TVector<IMessage>(messageList ?? []),
             OtherUpdates = new TVector<IUpdate>(layeredUpdates?.Where(u => u != null) ?? []),
             Users = new TVector<IUser>(userList ?? []),
-            State = pts == null
-                ? new TState
-                {
-                    Date = DateTime.UtcNow.ToTimestamp(),
-                    Qts = qts,
-                    Pts = pts?.Pts ?? 1,
-                    UnreadCount = unreadCount,
-                    Seq = 1
-                }
-                : objectMapper.Map<IPtsReadModel, TState>(pts) ?? new TState
-                {
-                    Date = DateTime.UtcNow.ToTimestamp(),
-                    Qts = qts,
-                    Pts = pts?.Pts ?? 1,
-                    UnreadCount = unreadCount,
-                    Seq = 1
-                }
+            State = new TState
+            {
+                Date = pts?.Date > 0 ? pts.Date : DateTime.UtcNow.ToTimestamp(),
+                Qts = qts,
+                Pts = statePts > 0 ? statePts : 1,
+                UnreadCount = unreadCount,
+                Seq = 1
+            }
         };
-        if (cachedPts > pts?.Pts)
-        {
-            difference.State.Pts = cachedPts;
-        }
 
         return difference;
     }
+
+    private static int ResolveDifferencePts(
+        int ptsReadModelPts,
+        int cachedPts,
+        IList<IUpdate> updateList,
+        IReadOnlyCollection<IMessageReadModel>? messageList)
+    {
+        var maxPts = Math.Max(ptsReadModelPts, cachedPts);
+
+        if (messageList is { Count: > 0 })
+        {
+            maxPts = Math.Max(maxPts, messageList.Max(p => p.Pts));
+        }
+
+        if (updateList is { Count: > 0 })
+        {
+            foreach (var update in updateList)
+            {
+                maxPts = Math.Max(maxPts, GetUpdatePts(update));
+            }
+        }
+
+        return maxPts;
+    }
+
+    private static int GetUpdatePts(IUpdate update) => update switch
+    {
+        TUpdateNewMessage u => u.Pts,
+        TUpdateDeleteMessages u => u.Pts,
+        TUpdateReadHistoryInbox u => u.Pts,
+        TUpdateReadHistoryOutbox u => u.Pts,
+        TUpdateEditMessage u => u.Pts,
+        TUpdateReadMessagesContents u => u.Pts,
+        TUpdateWebPage u => u.Pts,
+        TUpdateFolderPeers u => u.Pts,
+        TUpdatePinnedMessages u => u.Pts,
+        TUpdateMessageReactions u => u.Pts,
+        TUpdateMessageExtendedMedia u => u.Pts,
+        TUpdateDeleteScheduledMessages u => u.Pts,
+        _ => 0
+    };
 
     private static bool IsInvalidUpdate(IUpdate update)
     {

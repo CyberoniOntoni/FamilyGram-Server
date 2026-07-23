@@ -19,20 +19,29 @@ public class PtsHelper(IQueryProcessor queryProcessor) : IPtsHelper, ISingletonD
 
     public async Task<PtsCacheItem> GetPtsForUserAsync(long userId)
     {
+        // Always re-read Mongo so GetState does not stick on a stale in-memory value
+        // when PtsReadModel was repaired or updated by another process after first load.
+        var ptsReadModel = await queryProcessor.ProcessAsync(new GetPtsByPeerIdQuery(userId));
+        var dbPts = ptsReadModel?.Pts ?? 0;
+        var dbQts = ptsReadModel?.Qts ?? 0;
+
         if (!_ownerToPtsDict.TryGetValue(userId, out var ptsCacheItem))
         {
-            var ptsReadModel = await queryProcessor.ProcessAsync(new GetPtsByPeerIdQuery(userId));
-            if (ptsReadModel != null)
-            {
-                ptsCacheItem = new PtsCacheItem(ptsReadModel.PeerId, ptsReadModel.Pts, ptsReadModel.Qts,
-                    ptsReadModel.Date);
-            }
-            else
-            {
-                ptsCacheItem = new PtsCacheItem(userId, date: DateTime.UtcNow.ToTimestamp());
-            }
-
+            ptsCacheItem = ptsReadModel != null
+                ? new PtsCacheItem(ptsReadModel.PeerId, ptsReadModel.Pts, ptsReadModel.Qts, ptsReadModel.Date)
+                : new PtsCacheItem(userId, date: DateTime.UtcNow.ToTimestamp());
             _ownerToPtsDict.TryAdd(userId, ptsCacheItem);
+            return ptsCacheItem;
+        }
+
+        if (dbPts > ptsCacheItem.Pts)
+        {
+            ptsCacheItem.AddPts(dbPts - ptsCacheItem.Pts);
+        }
+
+        if (dbQts > ptsCacheItem.Qts)
+        {
+            ptsCacheItem.AddQts(dbQts - ptsCacheItem.Qts);
         }
 
         return ptsCacheItem;

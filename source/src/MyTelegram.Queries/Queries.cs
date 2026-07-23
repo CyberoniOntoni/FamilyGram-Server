@@ -258,6 +258,12 @@ public record GetPrivacyQuery(
 
 public record GetPtsByPeerIdQuery(long PeerId) : IQuery<IPtsReadModel?>;
 
+/// <summary>
+/// Highest pts currently stored on any message for this owner peer.
+/// Used to reconcile a lagging PtsReadModel after HiLo jumps / restarts.
+/// </summary>
+public record GetMaxPtsByPeerIdQuery(long PeerId) : IQuery<int>;
+
 public record GetPtsByPermAuthKeyIdQuery(
     long PeerId,
     long PermAuthKeyId) : IQuery<IPtsForAuthKeyIdReadModel?>;

@@ -1,3 +1,4 @@
+using MyTelegram.Messenger.Services.Caching;
 using MyTelegram.Schema.Updates;
 
 namespace MyTelegram.Messenger.Handlers.LatestLayer.Updates;
@@ -8,7 +9,8 @@ namespace MyTelegram.Messenger.Handlers.LatestLayer.Updates;
 /// <remarks>
 /// Access: [User ✔] [Bot ✔] [Anonymous ✖]
 /// </remarks>
-internal sealed class GetStateHandler(IPtsHelper ptsHelper) : RpcResultObjectHandler<MyTelegram.Schema.Updates.RequestGetState, MyTelegram.Schema.Updates.IState>
+internal sealed class GetStateHandler(IPtsHelper ptsHelper, IQueryProcessor queryProcessor)
+    : RpcResultObjectHandler<MyTelegram.Schema.Updates.RequestGetState, MyTelegram.Schema.Updates.IState>
 {
     protected override async Task<IState> HandleCoreAsync(IRequestInput input, RequestGetState obj)
     {
@@ -19,10 +21,18 @@ internal sealed class GetStateHandler(IPtsHelper ptsHelper) : RpcResultObjectHan
         }
 
         var cacheItem = await ptsHelper.GetPtsForUserAsync(input.UserId);
+        // Reconcile lagging PtsReadModel against actual message pts (HiLo jumps after restarts).
+        var maxMessagePts = await queryProcessor.ProcessAsync(new GetMaxPtsByPeerIdQuery(input.UserId));
+        var pts = Math.Max(cacheItem.Pts, maxMessagePts);
+        if (pts > cacheItem.Pts)
+        {
+            await ptsHelper.IncrementPtsAsync(input.UserId, pts);
+        }
+
         var state = new TState
         {
             Date = CurrentDate,
-            Pts = cacheItem.Pts,
+            Pts = pts > 0 ? pts : 1,
             Qts = cacheItem.Qts,
             Seq = 1,
             UnreadCount = cacheItem.UnreadCount,
