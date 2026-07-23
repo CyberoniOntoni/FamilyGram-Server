@@ -167,9 +167,6 @@ public class DifferenceConverterService(
         TUpdateWebPage u => u.Pts,
         TUpdateFolderPeers u => u.Pts,
         TUpdatePinnedMessages u => u.Pts,
-        TUpdateMessageReactions u => u.Pts,
-        TUpdateMessageExtendedMedia u => u.Pts,
-        TUpdateDeleteScheduledMessages u => u.Pts,
         _ => 0
     };
 
