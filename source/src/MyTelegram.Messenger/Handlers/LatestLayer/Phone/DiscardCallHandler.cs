@@ -159,15 +159,17 @@ internal sealed class DiscardCallHandler(
         IPhoneCallDiscardReason? reason,
         bool video)
     {
-        // Claim once per user so double hangup / concurrent discards do not double-write history.
+        // Claim once per call (not per hangup user). History direction must follow the
+        // caller (outgoing for caller / incoming for callee), independent of who hung up.
         var claimFilter = Builders<CallSessionDocument>.Filter.And(
             Builders<CallSessionDocument>.Filter.Eq(s => s.CallId, callId),
-            Builders<CallSessionDocument>.Filter.Not(
-                Builders<CallSessionDocument>.Filter.AnyEq(s => s.HistoryWrittenUserIds, input.UserId)));
+            Builders<CallSessionDocument>.Filter.Or(
+                Builders<CallSessionDocument>.Filter.Exists(s => s.HistoryWrittenUserIds, false),
+                Builders<CallSessionDocument>.Filter.Size(s => s.HistoryWrittenUserIds, 0)));
 
         var claimed = await _callCollection.FindOneAndUpdateAsync(
             claimFilter,
-            Builders<CallSessionDocument>.Update.AddToSet(s => s.HistoryWrittenUserIds, input.UserId),
+            Builders<CallSessionDocument>.Update.Set(s => s.HistoryWrittenUserIds, new List<long> { callerId, calleeId }),
             new FindOneAndUpdateOptions<CallSessionDocument>
             {
                 ReturnDocument = ReturnDocument.After
@@ -176,9 +178,8 @@ internal sealed class DiscardCallHandler(
         if (claimed == null)
         {
             logger.LogDebug(
-                "Skipping call history message; already written for callId={CallId} userId={UserId}",
-                callId,
-                input.UserId);
+                "Skipping call history message; already written for callId={CallId}",
+                callId);
             return;
         }
 
@@ -195,9 +196,8 @@ internal sealed class DiscardCallHandler(
                     duration,
                     reason,
                     video,
-                    // First attempt uses deterministic RandomId; retries use fresh ids so a
-                    // true AggregateIsNew (different content, same slot) can allocate a new message.
-                    attempt == 1 ? HistoryRandomId(callId, input.UserId) : Random.Shared.NextInt64());
+                    // Deterministic per call (not per discarder) so redelivery is idempotent.
+                    attempt == 1 ? HistoryRandomId(callId, callerId) : Random.Shared.NextInt64());
                 return;
             }
             catch (Exception ex) when (IsRetryableHistoryFailure(ex))
@@ -205,26 +205,26 @@ internal sealed class DiscardCallHandler(
                 lastError = ex;
                 logger.LogWarning(
                     ex,
-                    "Call history message failed (attempt {Attempt}/{Max}) callId={CallId} userId={UserId}",
+                    "Call history message failed (attempt {Attempt}/{Max}) callId={CallId} callerId={CallerId}",
                     attempt,
                     HistorySendMaxAttempts,
                     callId,
-                    input.UserId);
+                    callerId);
             }
         }
 
         // Release claim so a later discard / client retry can try again.
         await _callCollection.UpdateOneAsync(
             Builders<CallSessionDocument>.Filter.Eq(s => s.CallId, callId),
-            Builders<CallSessionDocument>.Update.Pull(s => s.HistoryWrittenUserIds, input.UserId));
+            Builders<CallSessionDocument>.Update.Set(s => s.HistoryWrittenUserIds, new List<long>()));
 
         // Do not fail phone.discardCall: media path already tore down and peer was notified.
         logger.LogError(
             lastError,
-            "Call history message abandoned after {Max} attempts; discard still succeeds. callId={CallId} userId={UserId}",
+            "Call history message abandoned after {Max} attempts; discard still succeeds. callId={CallId} callerId={CallerId}",
             HistorySendMaxAttempts,
             callId,
-            input.UserId);
+            callerId);
     }
 
     private static bool IsRetryableHistoryFailure(Exception ex)
@@ -255,9 +255,10 @@ internal sealed class DiscardCallHandler(
         bool video,
         long randomId)
     {
-        var isCaller = input.UserId == callerId;
-        var targetUserId = isCaller ? calleeId : callerId;
-
+        // Always attribute the service message to the caller so each side gets the
+        // correct Out flag: caller outbox Out=true, callee inbox Out=false.
+        // (Previously used the hangup user as sender, so the party that hangs up
+        // always saw "Outgoing call" and the peer always saw "Incoming call".)
         var action = new TMessageActionPhoneCall
         {
             CallId = callId,
@@ -267,9 +268,9 @@ internal sealed class DiscardCallHandler(
         };
 
         var sendInput = new SendMessageInput(
-            input.ToRequestInfo() with { ReqMsgId = 0 },
-            input.UserId,
-            new Peer(PeerType.User, targetUserId),
+            input.ToRequestInfo() with { ReqMsgId = 0, UserId = callerId },
+            callerId,
+            new Peer(PeerType.User, calleeId),
             string.Empty,
             randomId,
             sendMessageType: SendMessageType.MessageService,
