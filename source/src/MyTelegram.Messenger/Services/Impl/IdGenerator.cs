@@ -12,6 +12,9 @@ public class IdGenerator(
     ILogger<IdGenerator> logger)
     : IIdGenerator, ITransientDependency
 {
+    private const int MessageIdMaxProbe = 512;
+    private const int MessageIdCollisionRetries = 128;
+
     public async Task<int> NextIdAsync(IdType idType,
         long id,
         int step = 1,
@@ -27,18 +30,18 @@ public class IdGenerator(
     {
         var sw = Stopwatch.StartNew();
 
-        HiLoValueGeneratorState state;
+        long result;
         if (idType == IdType.MessageId)
         {
-            state = await GetMessageIdStateAsync(idType, id);
+            result = await NextFreeMessageIdAsync(id, cancellationToken);
         }
         else
         {
-            state = cache.GetOrAdd(idType, id);
+            var state = cache.GetOrAdd(idType, id);
+            var generator = factory.Create(state);
+            result = await generator.NextAsync(idType, id, cancellationToken) + GetInitId(idType);
         }
 
-        var generator = factory.Create(state);
-        var nextId = await generator.NextAsync(idType, id, cancellationToken);
         sw.Stop();
 
         if (sw.Elapsed.TotalMilliseconds > 100)
@@ -46,7 +49,36 @@ public class IdGenerator(
             logger.LogWarning("[{Timespan}] Generate id too slow, idType: {IdType}, id: {Id}", sw.Elapsed, idType, id);
         }
 
-        return nextId + GetInitId(idType);
+        return result;
+    }
+
+    private async Task<long> NextFreeMessageIdAsync(long ownerPeerId, CancellationToken cancellationToken)
+    {
+        var state = await GetMessageIdStateAsync(IdType.MessageId, ownerPeerId);
+        var generator = factory.Create(state);
+
+        for (var attempt = 0; attempt < MessageIdCollisionRetries; attempt++)
+        {
+            var nextId = (int)await generator.NextAsync(IdType.MessageId, ownerPeerId, cancellationToken);
+            if (nextId <= 0)
+            {
+                continue;
+            }
+
+            if (await IsMessageAggregateNewAsync(ownerPeerId, nextId, cancellationToken))
+            {
+                return nextId;
+            }
+
+            logger.LogWarning(
+                "MessageId already occupied in event store, advancing HiLo. peerId={PeerId} messageId={MessageId} attempt={Attempt}",
+                ownerPeerId,
+                nextId,
+                attempt + 1);
+        }
+
+        throw new InvalidOperationException(
+            $"Unable to allocate a free MessageId for peer {ownerPeerId} after {MessageIdCollisionRetries} attempts.");
     }
 
     private static long GetInitId(IdType idType)
@@ -69,6 +101,7 @@ public class IdGenerator(
 
         return maxId ?? 0;
     }
+
     private async Task<HiLoValueGeneratorState> GetMessageIdStateAsync(IdType idType, long id)
     {
         // Seed HiLo from the highest known message id so we never re-issue IDs that already
@@ -91,9 +124,7 @@ public class IdGenerator(
     {
         var low = Math.Max(0, maxFromReadModel);
 
-        // Walk forward a short window if MaxMessageId from PtsReadModel lags the event store.
-        const int maxProbe = 64;
-        for (var i = 0; i < maxProbe; i++)
+        for (var i = 0; i < MessageIdMaxProbe; i++)
         {
             var candidate = (int)low + 1;
             if (candidate <= 0)
@@ -101,25 +132,36 @@ public class IdGenerator(
                 break;
             }
 
-            var aggregate = new MessageAggregate(MessageId.Create(ownerPeerId, candidate));
-            await aggregate.LoadAsync(eventStore, snapshotStore, CancellationToken.None);
-            if (aggregate.IsNew)
+            if (await IsMessageAggregateNewAsync(ownerPeerId, candidate, CancellationToken.None))
             {
+                if (low > maxFromReadModel)
+                {
+                    logger.LogWarning(
+                        "MessageId low watermark advanced past Pts MaxMessageId due to event-store occupancy. peerId={PeerId} ptsMax={PtsMax} low={Low}",
+                        ownerPeerId,
+                        maxFromReadModel,
+                        low);
+                }
+
                 return low;
             }
 
             low = candidate;
         }
 
-        if (low > maxFromReadModel)
-        {
-            logger.LogWarning(
-                "MessageId low watermark advanced past Pts MaxMessageId due to event-store occupancy. peerId={PeerId} ptsMax={PtsMax} low={Low}",
-                ownerPeerId,
-                maxFromReadModel,
-                low);
-        }
+        logger.LogWarning(
+            "MessageId low watermark probe exhausted; using low={Low} for peerId={PeerId} ptsMax={PtsMax}",
+            low,
+            ownerPeerId,
+            maxFromReadModel);
 
         return low;
+    }
+
+    private async Task<bool> IsMessageAggregateNewAsync(long ownerPeerId, int messageId, CancellationToken cancellationToken)
+    {
+        var aggregate = new MessageAggregate(MessageId.Create(ownerPeerId, messageId));
+        await aggregate.LoadAsync(eventStore, snapshotStore, cancellationToken);
+        return aggregate.IsNew;
     }
 }

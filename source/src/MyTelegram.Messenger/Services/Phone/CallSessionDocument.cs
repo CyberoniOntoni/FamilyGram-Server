@@ -34,6 +34,12 @@ public class CallSessionDocument
     public string? LogFileName { get; set; }
     public string? LogFileMd5Checksum { get; set; }
 
+    /// <summary>
+    /// User ids that already wrote a phone_call service message for this session
+    /// (once per participant; guards double discard / redelivery).
+    /// </summary>
+    public List<long> HistoryWrittenUserIds { get; set; } = [];
+
     public bool IsParticipant(long userId)
     {
         return CallerId == userId || CalleeId == userId;
