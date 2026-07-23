@@ -45,6 +45,24 @@ internal sealed class GetDifferenceHandler(IMessageAppService messageAppService,
         limit = Math.Min(limit, MyTelegramConsts.DefaultPtsTotalLimit);
         var updatesReadModels = await queryProcessor.ProcessAsync(new GetUpdatesQuery(input.UserId, input.UserId, obj.Pts, obj.Date, limit));
         var messageIds = updatesReadModels.Where(p => p.UpdatesType == UpdatesType.NewMessages).Select(p => p.MessageId ?? 0).ToList();
+
+        // Recovery: concurrent HiLo historically issued non-monotonic pts, so a client
+        // stuck at a high pts never sees later messages with lower pts via pts>minPts.
+        // Also pull mailbox rows after PtsReadModel.MaxMessageId so getDifference heals.
+        var maxMessageIdWatermark = ptsReadModel?.MaxMessageId ?? 0;
+        var orphanMessageIds = await queryProcessor.ProcessAsync(
+            new GetMessageIdListAfterIdQuery(userId, maxMessageIdWatermark, limit));
+        if (orphanMessageIds.Count > 0)
+        {
+            foreach (var messageId in orphanMessageIds)
+            {
+                if (messageId > 0 && !messageIds.Contains(messageId))
+                {
+                    messageIds.Add(messageId);
+                }
+            }
+        }
+
         // all channel updates
         var channelUpdatesReadModels = await queryProcessor.ProcessAsync(new GetChannelUpdatesByGlobalSeqNoQuery(joinedChannelIdList.ToList(), globalSeqNo, limit, input.UserId));
         if (channelUpdatesReadModels.Any(p => p.OnlySendToUserId.HasValue))
@@ -63,9 +81,13 @@ internal sealed class GetDifferenceHandler(IMessageAppService messageAppService,
         var allUpdateList = updatesReadModels.Where(p => p.UpdatesType == UpdatesType.Updates).SelectMany(p => p.Updates ?? []).ToList();
         allUpdateList.AddRange(channelUpdatesReadModels.Where(p => p.UpdatesType == UpdatesType.Updates).SelectMany(p => p.Updates ?? []));
         allUpdateList.AddRange(userUpdates.SelectMany(p => p.Updates ?? []));
-        if (updatesReadModels.Count > 0 || channelUpdatesReadModels.Count > 0 || userUpdates.Count > 0)
+        if (updatesReadModels.Count > 0 || channelUpdatesReadModels.Count > 0 || userUpdates.Count > 0 || dto.MessageList.Count > 0)
         {
             var maxPts = updatesReadModels.Count > 0 ? updatesReadModels.Max(p => p.Pts) : obj.Pts;
+            if (dto.MessageList.Count > 0)
+            {
+                maxPts = Math.Max(maxPts, dto.MessageList.Max(p => p.Pts));
+            }
             var channelMaxGlobalSeqNo = channelUpdatesReadModels.Count > 0 ? channelUpdatesReadModels.Max(p => p.GlobalSeqNo) : 0; //updatesReadModels.Max(p => p.GlobalSeqNo);
             var userGlobalSeqNo = userUpdates.Count > 0 ? userUpdates.Max(p => p.GlobalSeqNo) : 0;
             var maxGlobalSeqNo = Math.Max(channelMaxGlobalSeqNo, userGlobalSeqNo);
@@ -73,6 +95,9 @@ internal sealed class GetDifferenceHandler(IMessageAppService messageAppService,
         }
 
         dto.MessageList = dto.MessageList.OrderBy(p => p.MessageId).ToList();
+        // Prefer true max pts so state never lags behind recovered messages.
+        var maxMessagePts = await queryProcessor.ProcessAsync(new GetMaxPtsByPeerIdQuery(userId));
+        cachedPts = Math.Max(cachedPts, maxMessagePts);
         var r = differenceConverterService.ToDifference(input, dto, ptsReadModel, cachedPts, limit, allUpdateList, [], [], layer: input.Layer);
         //logger.LogInformation("{UserId},Layer={Layer},res:{@Res}", input.UserId, input.Layer, r);
         return r;

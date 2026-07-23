@@ -1,4 +1,5 @@
-﻿using MyTelegram.Services.Services.IdGenerator;
+﻿using System.Collections.Concurrent;
+using MyTelegram.Services.Services.IdGenerator;
 
 namespace MyTelegram.Messenger.Services.Impl;
 
@@ -14,6 +15,18 @@ public class IdGenerator(
 {
     private const int MessageIdMaxProbe = 512;
     private const int MessageIdCollisionRetries = 128;
+    private const int PtsFloorBurnLimit = 2048;
+
+    /// <summary>
+    /// Per-peer gates so concurrent sagas cannot interleave HiLo blocks and
+    /// issue non-monotonic pts (which breaks client getDifference / push apply).
+    /// </summary>
+    private static readonly ConcurrentDictionary<long, SemaphoreSlim> PtsGates = new();
+
+    /// <summary>
+    /// In-process floor of the highest pts issued (or observed) per peer.
+    /// </summary>
+    private static readonly ConcurrentDictionary<long, int> PtsFloor = new();
 
     public async Task<int> NextIdAsync(IdType idType,
         long id,
@@ -35,6 +48,10 @@ public class IdGenerator(
         {
             result = await NextFreeMessageIdAsync(id, cancellationToken);
         }
+        else if (idType == IdType.Pts)
+        {
+            result = await NextMonotonicPtsAsync(id, cancellationToken);
+        }
         else
         {
             var state = cache.GetOrAdd(idType, id);
@@ -50,6 +67,59 @@ public class IdGenerator(
         }
 
         return result;
+    }
+
+    private async Task<long> NextMonotonicPtsAsync(long peerId, CancellationToken cancellationToken)
+    {
+        var gate = PtsGates.GetOrAdd(peerId, static _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            var floor = Math.Max(
+                PtsFloor.TryGetValue(peerId, out var memFloor) ? memFloor : 0,
+                await GetPtsFloorFromStoreAsync(peerId, cancellationToken));
+
+            var state = cache.GetOrAdd(IdType.Pts, peerId);
+            var generator = factory.Create(state);
+            var init = GetInitId(IdType.Pts);
+
+            long next = 0;
+            for (var attempt = 0; attempt < PtsFloorBurnLimit; attempt++)
+            {
+                next = await generator.NextAsync(IdType.Pts, peerId, cancellationToken) + init;
+                if (next > floor)
+                {
+                    break;
+                }
+            }
+
+            if (next <= floor)
+            {
+                // HiLo block exhausted without clearing the floor (e.g. DB max far above
+                // current block). Jump to floor+1 and record it — rare path.
+                next = floor + 1L;
+                logger.LogWarning(
+                    "Pts HiLo could not clear floor; forcing next. peerId={PeerId} floor={Floor} forced={Next}",
+                    peerId,
+                    floor,
+                    next);
+            }
+
+            PtsFloor[peerId] = (int)next;
+            return next;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    private async Task<int> GetPtsFloorFromStoreAsync(long peerId, CancellationToken cancellationToken)
+    {
+        var maxFromMessages = await queryProcessor.ProcessAsync(new GetMaxPtsByPeerIdQuery(peerId));
+        var ptsReadModel = await queryProcessor.ProcessAsync(new GetPtsByPeerIdQuery(peerId));
+        var maxFromReadModel = ptsReadModel?.Pts ?? 0;
+        return Math.Max(maxFromMessages, maxFromReadModel);
     }
 
     private async Task<long> NextFreeMessageIdAsync(long ownerPeerId, CancellationToken cancellationToken)

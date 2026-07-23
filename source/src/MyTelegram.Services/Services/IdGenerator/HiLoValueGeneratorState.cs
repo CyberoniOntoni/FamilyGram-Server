@@ -98,7 +98,7 @@ public class HiLoValueGeneratorState : IDisposable
         // If the chosen value is outside of the current block then we need a new block.
         // It is possible that other threads will use all of the new block before this thread
         // gets a chance to use the new value, so use a while here to do it all again.
-        if (newValue.Low >= newValue.High)
+        while (newValue.Low >= newValue.High)
         {
             await _semaphoreSlim.WaitAsync(cancellationToken);
             try
@@ -119,6 +119,13 @@ public class HiLoValueGeneratorState : IDisposable
             finally
             {
                 _semaphoreSlim.Release();
+            }
+
+            // Another thread may have consumed the entire new block before we
+            // exit the lock — re-check and fetch again if needed (matches Next()).
+            if (newValue.Low >= newValue.High)
+            {
+                newValue = GetNextValue();
             }
         }
 

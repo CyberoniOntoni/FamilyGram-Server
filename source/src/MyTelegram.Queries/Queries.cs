@@ -264,6 +264,14 @@ public record GetPtsByPeerIdQuery(long PeerId) : IQuery<IPtsReadModel?>;
 /// </summary>
 public record GetMaxPtsByPeerIdQuery(long PeerId) : IQuery<int>;
 
+/// <summary>
+/// Message ids for an owner after a watermark (exclusive), ascending.
+/// Used by getDifference recovery when pts went non-monotonic and
+/// PtsReadModel.MaxMessageId lags behind the real mailbox.
+/// </summary>
+public record GetMessageIdListAfterIdQuery(long OwnerPeerId, int AfterMessageId, int Limit)
+    : IQuery<IReadOnlyCollection<int>>;
+
 public record GetPtsByPermAuthKeyIdQuery(
     long PeerId,
     long PermAuthKeyId) : IQuery<IPtsForAuthKeyIdReadModel?>;
