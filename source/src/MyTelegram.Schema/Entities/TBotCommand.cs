@@ -4,10 +4,10 @@ namespace MyTelegram.Schema;
 /// <summary>
 /// Describes a bot command that can be used in a chat (layer 224 wire: no flags).
 /// </summary>
-[TlObject(0xc27ac8c7)]
+[TlObject(0x9852d6d2)]
 public sealed partial class TBotCommand : IBotCommand
 {
-    public uint ConstructorId => 0xc27ac8c7;
+    public uint ConstructorId => 0x9852d6d2;
     public string Command { get; set; }
     public string Description { get; set; }
 

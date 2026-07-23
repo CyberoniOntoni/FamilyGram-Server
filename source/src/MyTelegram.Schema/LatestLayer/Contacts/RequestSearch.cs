@@ -13,10 +13,10 @@ namespace MyTelegram.Schema.Contacts;
 /// <remarks>
 /// Access: [User ✔] [Bot ✖] [Anonymous ✖]
 /// </remarks>
-[TlObject(0x11f812d8)]
+[TlObject(0x05f58d0f)]
 public sealed partial class RequestSearch : IRequest<MyTelegram.Schema.Contacts.IFound>
 {
-    public uint ConstructorId => 0x11f812d8;
+    public uint ConstructorId => 0x05f58d0f;
 
     /// <summary>
     /// Target substring

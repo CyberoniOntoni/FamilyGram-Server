@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// A message
 /// <para>See <a href="https://corefork.telegram.org/constructor/message" /></para>
 /// </summary>
-[TlObject(0x3ae56482)]
+[TlObject(0x7600b9d3)]
 public sealed partial class TMessage : IMessage, ILayeredMessage
 {
-    public uint ConstructorId => 0x3ae56482;
+    public uint ConstructorId => 0x7600b9d3;
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>
     /// </summary>

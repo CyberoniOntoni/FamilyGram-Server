@@ -6,10 +6,10 @@ namespace MyTelegram.Schema;
 /// Represents a message <a href="https://corefork.telegram.org/api/drafts">draft</a>.
 /// <para>See <a href="https://corefork.telegram.org/constructor/draftMessage" /></para>
 /// </summary>
-[TlObject(0x96eaa5eb)]
+[TlObject(0x60fe3294)]
 public sealed partial class TDraftMessage : ILayeredDraftMessage
 {
-    public uint ConstructorId => 0x96eaa5eb;
+    public uint ConstructorId => 0x60fe3294;
     /// <summary>
     /// Flags, see <a href="https://corefork.telegram.org/mtproto/TL-combinators#conditional-fields">TL conditional fields</a>
     /// </summary>

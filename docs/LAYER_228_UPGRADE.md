@@ -1,28 +1,28 @@
 # API Layer 228 upgrade
 
-**Status:** core dual-layer + high-impact web methods; **wire IDs held at 224** for closed session-server  
-**Production wire layer:** **224** (`Layers.LayerLatest`) — session-server compatible  
-**Product target layer:** **228** (`Layers.LayerTarget`) when session-server is rebuilt with FamilyGram Schema  
-**Min supported:** **224** (request dual-registration + legacy constructor aliases)  
+**Status:** P0 wire cutover — `Layers.LayerLatest = 228` with open session-server  
+**Production wire layer:** **228** (`Layers.LayerLatest`)  
+**Min supported:** **224** (dual object-id registration for common methods during client migration)  
 **Upstream forks:** see [UPSTREAM_FORKS.md](./UPSTREAM_FORKS.md)
 
-## What landed
+## What landed (P0)
 
 | Area | Change |
 |------|--------|
 | `Layers.LayerLatest` | **228** |
-| Schema constructor IDs | 26 ID-changed types updated to 228 |
-| New optional fields | `rich_message`, `guestchat_via_from`, community/guard flags, poll countries, … |
-| Rich message types | `RichMessage` / `InputRichMessage*` / `InputRichFile*` |
-| Join result types | `messages.ChatInviteJoinResult*` + **RPC wrap** for layer ≥ 228 |
-| Dual-layer plumbing | legacy constructor aliases + dual handler registration |
-| `messages.getRichMessage` | Handler (reuses message store) |
-| `aicompose.*` | Schema + stubs (empty tones / synthetic create) |
-| `account.get/updateWebBrowserSettings` | Schema + default empty settings |
+| Schema constructor IDs | 26 ID-changed types at 228 wire IDs (`scripts/upgrade_layer_228_ids.py`) |
+| Dual object-id map | 224 + 228 IDs still registered for send/edit/draft/join/import (clients can migrate) |
+| Open session-server | Uses shared Schema — must redeploy with this change |
+| Vendored schema | `docs/api.tl.228` |
 
-Vendored schema: `docs/api.tl.228`.
+## Client follow-up (P1 — not this commit)
 
-## Still remaining (lower priority / not used by FamilyGram Web core)
+| Client | Action |
+|--------|--------|
+| familygram web | `TG_GRAMJS_LAYER=228`; remove 224 force on `sendMessage` / `familygramTlCompat` |
+| Desktop / Android / iOS / webk | Raise `LAYER` / `MTPROTO_LAYER` to 228 |
+
+## Still remaining (API surface, not wire)
 
 | Namespace | Methods | Status |
 |-----------|---------|--------|
@@ -33,20 +33,26 @@ Vendored schema: `docs/api.tl.228`.
 | `stats.getPollStats` | poll stats | not implemented |
 | Full AI compose backend | real LLM tones | stubs only |
 
-Unknown methods still fail as unsupported objectId / `NotImplementedException`.
-
 ## Acceptance
 
 - [x] Server Latest = 228  
-- [x] Dual `messages.sendMessage` constructor IDs  
-- [x] History `message#7600b9d3`  
-- [x] Web `LAYER = 228`  
-- [x] Join/import RPC returns `chatInviteJoinResultOk` for layer 228  
-- [x] `messages.getRichMessage` / `aicompose.getTones` / web browser settings respond  
+- [x] Schema wire IDs at 228 (with dual map for key handlers)  
+- [x] Open session-server builds against Schema  
+- [ ] Lab smoke: invokeWithLayer 228 + sendMessage#fef48f62  
+- [ ] Web + other clients flipped to 228  
 - [ ] Full new API surface  
-- [ ] Production merge from `layer228` branch after QA  
+- [ ] Drop dual-ID shims when no 224 clients remain  
 
 ## Do not
 
-- Ship only a constant bump without dual-ID registration.  
-- Force Web back to 224 while Latest is 228 without re-enabling compat patches.
+- Deploy messenger/session with 228 Schema while clients still force 224-only *responses* that the new Schema no longer emit as Latest (push uses Latest IDs).  
+- Mix closed Docker Hub session-server with 228 wire (closed image cannot deserialize 228 constructors).  
+- Ship only a constant bump without Schema ID upgrade.
+
+## Rollback
+
+```bash
+python scripts/revert_layer_228_wire_ids.py
+# set Layers.LayerLatest = 224
+# rebuild + redeploy session + messenger*
+```
