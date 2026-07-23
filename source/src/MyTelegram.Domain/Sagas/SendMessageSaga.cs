@@ -34,8 +34,18 @@ public class SendMessageSaga : MyInMemoryAggregateSaga<SendMessageSaga, SendMess
 
     public Task HandleAsync(IDomainEvent<TempAggregate, TempId, SendMessageStartedEvent> domainEvent, ISagaContext sagaContext, CancellationToken cancellationToken)
     {
-        // Idempotency: skip if already started (RabbitMQ redelivery)
-        if (_state.SendMessageItems.Count > 0) return Task.CompletedTask;
+        // Already assigned message ids: do not allocate again. Re-publish CreateOutbox
+        // only while some outboxes are still missing (commands are idempotent on RandomId).
+        if (_state.SendMessageItems.Count > 0)
+        {
+            if (_state.SentCount < _state.SendMessageItems.Count)
+            {
+                RepublishCreateOutboxCommands(_state.RequestInfo, _state.SendMessageItems);
+            }
+
+            return Task.CompletedTask;
+        }
+
         return StartSendMessageAsync(domainEvent.AggregateEvent.RequestInfo,
             domainEvent.AggregateEvent.SendMessageItems,
             domainEvent.AggregateEvent.ClearDraft,
@@ -95,9 +105,19 @@ public class SendMessageSaga : MyInMemoryAggregateSaga<SendMessageSaga, SendMess
             isSendGroupedMessages
         ));
 
-        foreach (var item in newItems)
+        RepublishCreateOutboxCommands(requestInfo, newItems);
+    }
+
+    private void RepublishCreateOutboxCommands(RequestInfo requestInfo, List<SendMessageItem> items)
+    {
+        foreach (var item in items)
         {
             var messageItem = item.MessageItem;
+            if (_state.HasProcessedOutbox(messageItem.MessageId))
+            {
+                continue;
+            }
+
             var command = new CreateOutboxMessageCommand(
                 MessageId.Create(messageItem.OwnerPeer.PeerId,
                     messageItem.MessageId,
@@ -117,6 +137,15 @@ public class SendMessageSaga : MyInMemoryAggregateSaga<SendMessageSaga, SendMess
 
     public async Task HandleAsync(IDomainEvent<MessageAggregate, MessageId, OutboxMessageCreatedEvent> domainEvent, ISagaContext sagaContext, CancellationToken cancellationToken)
     {
+        var outboxMessageId = domainEvent.AggregateEvent.OutboxMessageItem.MessageId;
+
+        // Full outbox path is once-only: redelivery must not re-emit (SentCount++),
+        // re-update dialogs, or allocate new inbox message ids.
+        if (_state.HasProcessedOutbox(outboxMessageId))
+        {
+            return;
+        }
+
         Emit(new OutboxMessageCreatedSagaEvent(domainEvent.AggregateEvent.RequestInfo,
             domainEvent.AggregateEvent.OutboxMessageItem,
             domainEvent.AggregateEvent.MentionedUserIds,
@@ -124,10 +153,8 @@ public class SendMessageSaga : MyInMemoryAggregateSaga<SendMessageSaga, SendMess
             domainEvent.AggregateEvent.ChatMembers
             ));
         await HandleSendOutboxMessageCompletedAsync(domainEvent.AggregateEvent.OutboxMessageItem);
-
         await CreateInboxMessageAsync(domainEvent.AggregateEvent);
-
-        CreateMentions(domainEvent.AggregateEvent.MentionedUserIds, domainEvent.AggregateEvent.OutboxMessageItem.MessageId);
+        CreateMentions(domainEvent.AggregateEvent.MentionedUserIds, outboxMessageId);
         ClearDraft(domainEvent.AggregateEvent);
     }
 
@@ -159,6 +186,12 @@ public class SendMessageSaga : MyInMemoryAggregateSaga<SendMessageSaga, SendMess
     public Task HandleAsync(IDomainEvent<MessageAggregate, MessageId, InboxMessageCreatedEvent> domainEvent, ISagaContext sagaContext, CancellationToken cancellationToken)
     {
         var item = domainEvent.AggregateEvent.InboxMessageItem;
+
+        // Idempotent: domain-event redelivery must not double-count inbox completion.
+        if (_state.HasProcessedInbox(item.OwnerPeer.PeerId, item.MessageId))
+        {
+            return Task.CompletedTask;
+        }
 
         var command = new ReceiveInboxMessageCommand(
             DialogId.Create(domainEvent.AggregateEvent.InboxMessageItem.OwnerPeer.PeerId,

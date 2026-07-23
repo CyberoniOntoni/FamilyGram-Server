@@ -71,19 +71,55 @@ public class IdGenerator(
     }
     private async Task<HiLoValueGeneratorState> GetMessageIdStateAsync(IdType idType, long id)
     {
+        // Seed HiLo from the highest known message id so we never re-issue IDs that already
+        // exist in the event store (read-model lag / prior cold-cache bugs caused AggregateIsNew failures).
         var maxId = await GetMaxMessageIdAsync(id);
-        if (maxId > 0)
+        var nextFreeLow = await FindMessageIdLowWatermarkAsync(id, maxId);
+
+        var blockSize = stateBlockSizeHelper.GetBlockSize(idType);
+        var high = nextFreeLow <= 0 ? 0 : nextFreeLow / blockSize;
+        var highExclusive = (high + 1L) * blockSize + 1;
+
+        return await cache.GetOrAddAsync(idType, id, () =>
+            Task.FromResult(new HiLoValueGeneratorState(blockSize, nextFreeLow, highExclusive)));
+    }
+
+    /// <summary>
+    /// Returns a HiLo "low" value such that the next generated id (low+1) is free in the event store.
+    /// </summary>
+    private async Task<long> FindMessageIdLowWatermarkAsync(long ownerPeerId, int maxFromReadModel)
+    {
+        var low = Math.Max(0, maxFromReadModel);
+
+        // Walk forward a short window if MaxMessageId from PtsReadModel lags the event store.
+        const int maxProbe = 64;
+        for (var i = 0; i < maxProbe; i++)
         {
-            var aggregate = new MessageAggregate(MessageId.Create(id, maxId + 1));
+            var candidate = (int)low + 1;
+            if (candidate <= 0)
+            {
+                break;
+            }
+
+            var aggregate = new MessageAggregate(MessageId.Create(ownerPeerId, candidate));
             await aggregate.LoadAsync(eventStore, snapshotStore, CancellationToken.None);
             if (aggregate.IsNew)
             {
-                var blockSize = stateBlockSizeHelper.GetBlockSize(idType);
-                var high = maxId / blockSize;
-                return await cache.GetOrAddAsync(idType, id, () => Task.FromResult(new HiLoValueGeneratorState(blockSize, maxId, (high + 1) * blockSize + 1)));
+                return low;
             }
+
+            low = candidate;
         }
 
-        return cache.GetOrAdd(idType, id);
+        if (low > maxFromReadModel)
+        {
+            logger.LogWarning(
+                "MessageId low watermark advanced past Pts MaxMessageId due to event-store occupancy. peerId={PeerId} ptsMax={PtsMax} low={Low}",
+                ownerPeerId,
+                maxFromReadModel,
+                low);
+        }
+
+        return low;
     }
 }

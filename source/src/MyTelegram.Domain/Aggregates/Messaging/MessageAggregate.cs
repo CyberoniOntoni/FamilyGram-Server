@@ -58,7 +58,17 @@ public class MessageAggregate : SnapshotAggregateRoot<MessageAggregate, MessageI
         MessageItem inboxMessageItem,
         int senderMessageId)
     {
-        Specs.AggregateIsNew.ThrowDomainErrorIfNotSatisfied(this);
+        // Idempotent create: command redelivery after success must not throw AggregateIsNew.
+        if (!IsNew)
+        {
+            if (_state.MessageItem != null && _state.MessageItem.RandomId == inboxMessageItem.RandomId)
+            {
+                return;
+            }
+
+            Specs.AggregateIsNew.ThrowDomainErrorIfNotSatisfied(this);
+        }
+
         if (inboxMessageItem.EncryptedData != null)
         {
             inboxMessageItem = inboxMessageItem with { Message = string.Empty };
@@ -77,7 +87,17 @@ public class MessageAggregate : SnapshotAggregateRoot<MessageAggregate, MessageI
         long? linkedChannelId = null,
         List<long>? chatMembers = null)
     {
-        Specs.AggregateIsNew.ThrowDomainErrorIfNotSatisfied(this);
+        // Idempotent create: same RandomId on redelivery is a no-op success.
+        if (!IsNew)
+        {
+            if (_state.MessageItem != null && _state.MessageItem.RandomId == outboxMessageItem.RandomId)
+            {
+                return;
+            }
+
+            Specs.AggregateIsNew.ThrowDomainErrorIfNotSatisfied(this);
+        }
+
         if (outboxMessageItem.Post)
         {
             var reply = new MessageReply(linkedChannelId, 0, 0, null, null);

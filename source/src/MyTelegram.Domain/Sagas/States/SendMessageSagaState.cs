@@ -30,6 +30,12 @@ public class SendMessageSagaState : AggregateState<SendMessageSaga, SendMessageS
 
     public List<MessageItem> InboxMessageItems { get; private set; } = [];
 
+    /// <summary>
+    /// Outbox message ids whose OutboxMessageCreatedSagaEvent was applied.
+    /// Rebuilt from saga events so redelivery after rehydrate is safe.
+    /// </summary>
+    public HashSet<int> ProcessedOutboxMessageIds { get; private set; } = [];
+
     public bool IsSendOutboxMessageCompleted => SentCount == SendMessageItems.Count;
     public Dictionary<int, SendMessageItem> OutboxMessageItems { get; private set; } = [];
     public void Apply(SendMessageStartedSagaEvent aggregateEvent)
@@ -50,6 +56,12 @@ public class SendMessageSagaState : AggregateState<SendMessageSaga, SendMessageS
         }
         OutboxMessageItems = aggregateEvent.SendMessageItems.ToDictionary(k => k.MessageItem.MessageId);
     }
+
+    public bool HasProcessedOutbox(int outboxMessageId) =>
+        ProcessedOutboxMessageIds.Contains(outboxMessageId);
+
+    public bool HasProcessedInbox(long ownerPeerId, int messageId) =>
+        InboxMessageItems.Any(x => x.OwnerPeer.PeerId == ownerPeerId && x.MessageId == messageId);
 
     public void Apply(ReceiveInboxMessageCompletedSagaEvent aggregateEvent)
     {
@@ -76,6 +88,7 @@ public class SendMessageSagaState : AggregateState<SendMessageSaga, SendMessageS
     public void Apply(OutboxMessageCreatedSagaEvent aggregateEvent)
     {
         SentCount++;
+        ProcessedOutboxMessageIds.Add(aggregateEvent.MessageItem.MessageId);
     }
 
     public void Apply(SendOutboxMessageCompletedSagaEvent aggregateEvent)
