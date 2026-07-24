@@ -5,8 +5,8 @@ name: Build and Push Docker Images
 
 on:
   push:
-    # dev = production images (:latest). layer228 = bleeding-edge MTProto layer 228.
-    branches: [dev, layer228]
+    # main = production images (:latest + version). MTProto layer 228 is the product line.
+    branches: [main]
     tags: ["v*.*.*"]
     paths:
       - "source/**"
@@ -14,7 +14,7 @@ on:
       - "bot/**"
       - ".github/workflows/docker-build.yml"
   pull_request:
-    branches: [dev, layer228]
+    branches: [main]
     paths:
       - "source/**"
       - "build/docker/**"
@@ -91,10 +91,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.service.name }}
           tags: |
-            # Production images only from dev (installer main/dev → :latest)
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/dev' }}
-            type=raw,value=${{ steps.version.outputs.version }},enable=${{ github.ref == 'refs/heads/dev' }}
-            # Feature branches → tag equals branch name (installer REPO_BRANCH=layer228 → :layer228)
+            # Production tags from main
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=${{ steps.version.outputs.version }},enable=${{ github.ref == 'refs/heads/main' }}
             type=ref,event=branch
             type=sha,format=short
             type=ref,event=tag
