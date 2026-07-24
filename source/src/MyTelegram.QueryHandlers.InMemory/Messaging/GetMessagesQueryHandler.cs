@@ -38,7 +38,9 @@ public class
                 .WhereIf(query.Offset is { LoadType: LoadType.Backward, MaxId: > 0 }, p => p.MessageId < query.Offset!.MaxId)
                 //.WhereIf(query.Offset is { LoadType: LoadType.AroundMessage, MaxId: > 0 }, p => p.MessageId < query.Offset!.MaxId)
                 .WhereIf(query.Offset?.LoadType == LoadType.Forward, p => p.MessageId > query.Offset!.FromId)
-                .WhereIf(query.Pts > 0, p => p.Pts > query.Pts)
+                // Skip pts filter when an explicit MessageIdList is provided (getDifference orphans).
+                .WhereIf(query.Pts > 0 && (query.MessageIdList == null || query.MessageIdList.Count == 0),
+                    p => p.Pts > query.Pts)
                 .WhereIf(query.Peer != null && query.Peer.PeerType != PeerType.Empty,
                     p => p.ToPeerType == query.Peer!.PeerType && p.ToPeerId == query.Peer.PeerId)
                 .WhereIf(query.ReplyToMsgId > 0, p => p.ReplyToMsgId == query.ReplyToMsgId)

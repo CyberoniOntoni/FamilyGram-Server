@@ -28,21 +28,25 @@ public class PtsReadModel : IPtsReadModel,
 
     public Task ApplyAsync(IReadModelContext context, IDomainEvent<PtsAggregate, PtsId, PtsUpdatedEvent> domainEvent, CancellationToken cancellationToken)
     {
+        Id = PtsId.Create(domainEvent.AggregateEvent.PeerId).Value;
+        PeerId = domainEvent.AggregateEvent.PeerId;
+
+        // Always advance MaxMessageId even when pts does not increase (non-monotonic
+        // HiLo / read-history pts can leave MaxMessageId stuck while new messages exist).
+        if (domainEvent.AggregateEvent.MessageId.HasValue && domainEvent.AggregateEvent.MessageId > MaxMessageId)
+        {
+            MaxMessageId = domainEvent.AggregateEvent.MessageId.Value;
+        }
+
         if (Pts >= domainEvent.AggregateEvent.NewPts)
         {
             return Task.CompletedTask;
         }
 
-        Id = PtsId.Create(domainEvent.AggregateEvent.PeerId).Value;
-        PeerId = domainEvent.AggregateEvent.PeerId;
         Pts = domainEvent.AggregateEvent.NewPts;
         Date = domainEvent.AggregateEvent.Date;
 
         UnreadCount += domainEvent.AggregateEvent.ChangedUnreadCount;
-        if (domainEvent.AggregateEvent.MessageId.HasValue && domainEvent.AggregateEvent.MessageId > MaxMessageId)
-        {
-            MaxMessageId = domainEvent.AggregateEvent.MessageId.Value;
-        }
 
         return Task.CompletedTask;
     }
