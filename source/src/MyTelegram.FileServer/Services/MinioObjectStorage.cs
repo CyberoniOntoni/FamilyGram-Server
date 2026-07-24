@@ -66,19 +66,39 @@ public sealed class MinioObjectStorage(
         await EnsureBucketAsync(cancellationToken);
         try
         {
+            // Telegram clients often request a final chunk with offset >= size.
+            // MinIO answers 416 Range Not Satisfiable; older SDKs then throw NRE.
+            // Treat past-EOF as a clean empty body (end-of-file signal).
+            var size = await GetSizeAsync(objectName, cancellationToken);
+            if (size is null)
+            {
+                return null;
+            }
+
+            if (offset >= size.Value)
+            {
+                return [];
+            }
+
+            var actualLimit = (int)Math.Min(limit, size.Value - offset);
+            if (actualLimit <= 0)
+            {
+                return [];
+            }
+
             await using var ms = new MemoryStream();
             await minioClient.GetObjectAsync(
                 new GetObjectArgs()
                     .WithBucket(_options.BucketName)
                     .WithObject(objectName)
-                    .WithOffsetAndLength(offset, limit)
+                    .WithOffsetAndLength(offset, actualLimit)
                     .WithCallbackStream(stream => stream.CopyTo(ms)),
                 cancellationToken);
             return ms.ToArray();
         }
         catch (Exception ex)
         {
-            logger.LogDebug(ex, "GetRange failed for {Object} offset={Offset} limit={Limit}", objectName, offset, limit);
+            logger.LogWarning(ex, "GetRange failed for {Object} offset={Offset} limit={Limit}", objectName, offset, limit);
             return null;
         }
     }

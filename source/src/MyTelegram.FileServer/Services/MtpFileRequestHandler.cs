@@ -105,9 +105,22 @@ public sealed class MtpFileRequestHandler(
 
         if (chunk is null)
         {
+            logger.LogWarning(
+                "GetFile FILE_ID_INVALID fileId={FileId} user={UserId} offset={Offset} limit={Limit}",
+                fileId,
+                eventData.UserId,
+                getFile.Offset,
+                limit);
             await PublishRpcAsync(eventData, new TRpcError { ErrorCode = 400, ErrorMessage = "FILE_ID_INVALID" });
             return;
         }
+
+        logger.LogInformation(
+            "GetFile ok fileId={FileId} user={UserId} offset={Offset} returned={Length}",
+            fileId,
+            eventData.UserId,
+            getFile.Offset,
+            chunk.Length);
 
         var file = new TFile
         {

@@ -1,4 +1,4 @@
-using MongoDB.Bson;
+﻿using MongoDB.Bson;
 using MongoDB.Driver;
 using MyTelegram.Messenger.Services.Phone;
 
@@ -52,19 +52,16 @@ internal sealed class GetFileHandler : RpcResultObjectHandler<MyTelegram.Schema.
             RpcErrors.RpcErrors400.LocationInvalid.ThrowRpcError();
         }
 
-        // Try to get file from uploaded parts first (for recently uploaded files)
+        // Prefer parts by FileId only (NOT UserId). Uploads are stored under the
+        // sender's UserId; recipients must still be able to download the same FileId.
         var partsCollection = _database.GetCollection<BsonDocument>("file_parts");
-        var partsFilter = Builders<BsonDocument>.Filter.And(
-            Builders<BsonDocument>.Filter.Eq("UserId", input.UserId),
-            Builders<BsonDocument>.Filter.Eq("FileId", fileId)
-        );
+        var partsFilter = Builders<BsonDocument>.Filter.Eq("FileId", fileId);
         var parts = await partsCollection.Find(partsFilter)
             .Sort(Builders<BsonDocument>.Sort.Ascending("FilePart"))
             .ToListAsync();
 
         if (parts.Count > 0)
         {
-            // Assemble file from parts
             var allBytes = new List<byte>();
             foreach (var part in parts)
             {
@@ -73,49 +70,69 @@ internal sealed class GetFileHandler : RpcResultObjectHandler<MyTelegram.Schema.
             }
 
             var fileBytes = allBytes.ToArray();
-
-            // Apply offset and limit
-            var start = (int)Math.Min(obj.Offset, fileBytes.Length);
-            var length = Math.Min(obj.Limit, fileBytes.Length - start);
-            var resultBytes = new byte[length];
-            Array.Copy(fileBytes, start, resultBytes, 0, length);
-
-            _logger.LogDebug("Retrieved file from parts: FileId={FileId}, Offset={Offset}, Limit={Limit}, Returned={Length}",
-                fileId, obj.Offset, obj.Limit, resultBytes.Length);
-
-            return new MyTelegram.Schema.Upload.TFile
-            {
-                Type = new MyTelegram.Schema.Storage.TFilePartial(), // Partial file type
-                Mtime = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                Bytes = resultBytes
-            };
+            return SliceFile(fileBytes, obj.Offset, obj.Limit, fileId, "parts");
         }
 
-        // File not found in parts, check if it's a stored document/photo
-        // Stored files should be served by the FileServer, not the messenger server
+        // Fallback: known photo/document metadata exists but parts were purged after
+        // MinIO store. Point clients at FileServer path by logging; still try empty fail.
         var documentsCollection = _database.GetCollection<BsonDocument>("eventflow-documentreadmodel");
         var docFilter = Builders<BsonDocument>.Filter.Eq("DocumentId", fileId);
         var document = await documentsCollection.Find(docFilter).FirstOrDefaultAsync();
 
         if (document == null)
         {
-            // Check if it's a photo
             var photosCollection = _database.GetCollection<BsonDocument>("eventflow-photoreadmodel");
             var photoFilter = Builders<BsonDocument>.Filter.Eq("PhotoId", fileId);
             var photo = await photosCollection.Find(photoFilter).FirstOrDefaultAsync();
 
             if (photo == null)
             {
+                _logger.LogWarning(
+                    "GetFile FILE_ID_INVALID user={UserId} fileId={FileId} (no parts, no photo/document)",
+                    input.UserId,
+                    fileId);
                 RpcErrors.RpcErrors400.FileIdInvalid.ThrowRpcError();
             }
         }
 
-        // Stored files are served by the FileServer; messenger cannot serve them directly
-        _logger.LogWarning("GetFile called for stored file {FileId} - returning FileIdInvalid (should be served by FileServer)", fileId);
+        // Parts missing after MinIO promotion — messenger has no MinIO client.
+        // Return empty slice only when offset past EOF is ambiguous; otherwise invalid.
+        _logger.LogWarning(
+            "GetFile has metadata but no file_parts for fileId={FileId} user={UserId} offset={Offset}; " +
+            "client should hit FileServer MinIO path. Returning FILE_ID_INVALID.",
+            fileId,
+            input.UserId,
+            obj.Offset);
         RpcErrors.RpcErrors400.FileIdInvalid.ThrowRpcError();
 
-        // Unreachable
         throw new InvalidOperationException();
+    }
+
+    private MyTelegram.Schema.Upload.TFile SliceFile(byte[] fileBytes, long offset, int limit, long fileId, string source)
+    {
+        var start = (int)Math.Min(offset, fileBytes.Length);
+        var length = Math.Min(limit, Math.Max(0, fileBytes.Length - start));
+        var resultBytes = length <= 0 ? Array.Empty<byte>() : new byte[length];
+        if (length > 0)
+        {
+            Array.Copy(fileBytes, start, resultBytes, 0, length);
+        }
+
+        _logger.LogInformation(
+            "GetFile served from {Source}: FileId={FileId}, Offset={Offset}, Limit={Limit}, Returned={Length}, Total={Total}",
+            source,
+            fileId,
+            offset,
+            limit,
+            resultBytes.Length,
+            fileBytes.Length);
+
+        return new MyTelegram.Schema.Upload.TFile
+        {
+            Type = new MyTelegram.Schema.Storage.TFilePartial(),
+            Mtime = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+            Bytes = resultBytes
+        };
     }
 
     private async Task<MyTelegram.Schema.Upload.IFile> HandleGroupCallStreamAsync(
