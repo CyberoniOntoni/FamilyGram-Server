@@ -2,9 +2,9 @@
 
 [![API Layer](https://img.shields.io/badge/API_Layer-228-blueviolet)](https://corefork.telegram.org/methods)
 [![MTProto](https://img.shields.io/badge/MTProto_Protocol-2.0-green)](https://corefork.telegram.org/mtproto/)
-[![Fork](https://img.shields.io/badge/fork-loyldg%2Fmytelegram-blue)](https://github.com/loyldg/mytelegram)
+[![Fork](https://img.shields.io/badge/fork-glebxdlolreal%2Ftestgram-blue)](https://github.com/glebxdlolreal/testgram)
 
-**FamilyGram-Server** is the MTProto backend for [FamilyGram](https://github.com/CyberoniOntoni/familygram) — a fork of [MyTelegram](https://github.com/loyldg/mytelegram), a self-hosted C# implementation of the Telegram server-side API. (This repo was formerly named **Testgram**.)
+**FamilyGram-Server** is the MTProto backend for [FamilyGram](https://github.com/CyberoniOntoni/familygram). It is a fork of [Testgram](https://github.com/glebxdlolreal/testgram) (this codebase was previously published as **Testgram** / `CyberoniOntoni/testgram`). Testgram itself builds on the [MyTelegram](https://github.com/loyldg/mytelegram) self-hosted Telegram API stack.
 
 **Wire layer: 228 only** (`Layers.LayerLatest` = `Layers.LayerMinSupported` = 228). Clients must negotiate **228**. No dual object-id / multi-layer shims. See [docs/LAYER_228_UPGRADE.md](docs/LAYER_228_UPGRADE.md).
 
