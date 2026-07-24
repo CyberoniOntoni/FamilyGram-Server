@@ -49,7 +49,7 @@ Quick install (interactive Docker wizard, v3.1.2):
 
 ```bash
 # Prefer cloning — installer needs deploy/lib/installer-lib.sh
-git clone --branch dev https://github.com/CyberoniOntoni/FamilyGram-Server.git /opt/familygram-server
+git clone --branch main https://github.com/CyberoniOntoni/FamilyGram-Server.git /opt/familygram-server
 cd /opt/familygram-server
 bash deploy/install.sh          # use ssh -t if prompts don't echo input
 ```
@@ -57,8 +57,8 @@ bash deploy/install.sh          # use ssh -t if prompts don't echo input
 Or download the script pair:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/dev/deploy/install.sh -o install.sh
-curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/dev/deploy/lib/installer-lib.sh -o installer-lib.sh
+curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/main/deploy/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/main/deploy/lib/installer-lib.sh -o installer-lib.sh
 sudo bash install.sh
 ```
 
@@ -110,8 +110,8 @@ MTProto must go **direct** to your public IP — not through Cloudflare orange-c
    so clone the repo rather than downloading `docker-compose.yml` on its own:
 
 ```bash
-git clone --depth 1 https://github.com/CyberoniOntoni/FamilyGram-Server.git
-cd familygram-server/docker/compose
+git clone --branch main --depth 1 https://github.com/CyberoniOntoni/FamilyGram-Server.git
+cd FamilyGram-Server/docker/compose
 cp .env.example .env
 ```
 
@@ -177,8 +177,8 @@ App__WebRtcConnections__0__Ip=YOUR_SERVER_IP
 App__WebRtcConnections__0__Port=5348
 App__WebRtcConnections__0__Turn=True
 App__WebRtcConnections__0__Stun=True
-App__WebRtcConnections__0__UserName=testgram
-App__WebRtcConnections__0__Password=testgram123
+App__WebRtcConnections__0__UserName=familygram
+App__WebRtcConnections__0__Password=CHANGE_ME_STRONG
 ```
 
 Setup MongoDB indexes (automatic on first start):
@@ -319,21 +319,27 @@ docker compose up -d --force-recreate file-server
 
 ### CI (GitHub Actions)
 
-[`.github/workflows/docker-build.yml`](.github/workflows/docker-build.yml) builds the six .NET services this fork
+[`.github/workflows/docker-build.yml`](.github/workflows/docker-build.yml) builds the .NET services this fork
 carries source for — `messenger-command-server`, `messenger-query-server`, `gateway-server`, `auth-server`,
-`sms-sender`, `data-seeder` — plus the Python verification bot (`familygram-server-bot`), and pushes them to GHCR on every
-push to `dev` and on `v*.*.*` tags (pull requests build but don't push). Images are published as:
+`sms-sender`, `data-seeder`, open `file-server`, open `session-server` — plus the Python verification bot
+(`familygram-server-bot`), and pushes them to GHCR on every push to **`main`** and on `v*.*.*` tags
+(pull requests build but don't push). Images are published as:
 
 ```
 ghcr.io/cyberoniontoni/familygram-server/<service-name>:latest
 ghcr.io/cyberoniontoni/familygram-server/<service-name>:<version>   # from build/version.txt
+ghcr.io/cyberoniontoni/familygram-server/<service-name>:main
 ghcr.io/cyberoniontoni/familygram-server/<service-name>:<git-sha>
 ```
 
-`docker-compose.yml` already points at these images through `FamilyGramServerRegistry`/`FamilyGramServerVersion` in `.env`
-(see `.env.example`), so `docker compose pull && docker compose up -d` picks up whatever CI published. `session-server`
-and `file-server` aren't part of this fork's source, so they keep pulling prebuilt images from the upstream
-MyTelegram registry via the separate `MyTelegramRegistry`/`MyTelegramVersion` variables.
+`docker-compose.yml` points at these images through `FamilyGramServerRegistry` / `FamilyGramServerVersion` in `.env`
+(default **`latest`** — see `.env.example`). Use:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+to pick up whatever CI published from `main`.
 
 > GHCR packages are private by default even on a public repo. The first time the workflow runs, make each
 > `ghcr.io/cyberoniontoni/familygram-server/<service-name>` package public under the repo/org's **Packages** settings,
@@ -361,19 +367,21 @@ export REGISTRY_URL="ghcr.io/cyberoniontoni/familygram-server"
 
 ## Clients
 
-| Platform | Repository (`layer228` branch unless noted) |
+Default branch is **`main`** for FamilyGram-Server and the unified stack. Prefer wire **layer 228** clients with the open session-server image.
+
+| Platform | Repository |
 |----------|------------|
+| **Web + stack (recommended)** | https://github.com/CyberoniOntoni/familygram — Docker Compose + installer |
+| Server source (this repo) | https://github.com/CyberoniOntoni/FamilyGram-Server |
+| Desktop | https://github.com/CyberoniOntoni/familygram-desktop |
 | Android | https://github.com/CyberoniOntoni/testgram-android |
-| Desktop (FamilyGram) | https://github.com/CyberoniOntoni/familygram-desktop — see [docs/BUILD-testgram.md](https://github.com/CyberoniOntoni/familygram-desktop/blob/main/docs/BUILD-testgram.md) |
-| **Web + Server (FamilyGram)** | **https://github.com/CyberoniOntoni/familygram** — unified Docker stack (recommended) |
-| Web source only | https://github.com/CyberoniOntoni/familygram-web — telegram-tt fork |
 | iOS | https://github.com/CyberoniOntoni/mytelegram-iOS |
 | WebK | https://github.com/CyberoniOntoni/mytelegram-webk |
-| WebA (legacy) | https://github.com/CyberoniOntoni/mytelegram-weba — superseded by familygram-web |
+| WebA (legacy) | https://github.com/CyberoniOntoni/mytelegram-weba — superseded by familygram `web/` |
 | TDLib | https://github.com/CyberoniOntoni/mytelegram-td |
 | Bot API | https://github.com/CyberoniOntoni/mytelegram-bot-api |
 
-**Note:** Production still pulls closed-source `mytelegram/mytelegram-session-server` and `mytelegram/mytelegram-file-server`. Wire API layer stays **224** until those are replaced — see [docs/UPSTREAM_FORKS.md](docs/UPSTREAM_FORKS.md) and [docs/LAYER_228_UPGRADE.md](docs/LAYER_228_UPGRADE.md).
+**Production images:** open `session-server` and `file-server` are built in this repo and published to GHCR as `:latest` from `main`. Wire layer is **228** (`Layers.LayerLatest`). Dual maps still accept common **224** request constructors during client migration — see [docs/UPSTREAM_FORKS.md](docs/UPSTREAM_FORKS.md) and [docs/LAYER_228_UPGRADE.md](docs/LAYER_228_UPGRADE.md).
 
 ### Configure Clients
 1. Clone the client source code.

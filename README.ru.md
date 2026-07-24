@@ -1,15 +1,16 @@
-# Testgram
+# FamilyGram-Server
 
-[![API Layer](https://img.shields.io/badge/API_Layer-224-blueviolet)](https://corefork.telegram.org/methods)
+[![API Layer](https://img.shields.io/badge/API_Layer-228-blueviolet)](https://corefork.telegram.org/methods)
+[![Multi-layer](https://img.shields.io/badge/Multi--layer-224–228-green)](docs/LAYER_228_UPGRADE.md)
 [![MTProto](https://img.shields.io/badge/MTProto_Protocol-2.0-green)](https://corefork.telegram.org/mtproto/)
 [![Fork](https://img.shields.io/badge/fork-loyldg%2Fmytelegram-blue)](https://github.com/loyldg/mytelegram)
 
-**Testgram** — форк [MyTelegram](https://github.com/loyldg/mytelegram), самохостируемая реализация серверной части Telegram на C#.
+**FamilyGram-Server** — MTProto-бэкенд для [FamilyGram](https://github.com/CyberoniOntoni/familygram), форк [MyTelegram](https://github.com/loyldg/mytelegram). Ранее репозиторий назывался **Testgram**. Основная ветка: **`main`**.
 
 ## Поддерживаемые функции
 
 ### Открытые функции
-- API Layer: `224`
+- API Layer: `228` (Latest). Мультислой **224–228** — см. [docs/LAYER_228_UPGRADE.md](docs/LAYER_228_UPGRADE.md).
 - MTProto транспорты: `Abridged`, `Intermediate`
 - Личные чаты
 - Супергруппы
@@ -37,17 +38,15 @@
 
 ---
 
-## Запуск сервера Testgram
+## Запуск FamilyGram Server
 
 ### Быстрый старт через Docker
 
-1. Получите настройку Docker Compose. `docker-compose.yml` монтирует несколько вспомогательных файлов из этой
-   же директории (`init-calls.sh`, `init-business.sh`, `init-botfather.sh`, `minio-proxy.conf` и т.д.), поэтому
-   склонируйте репозиторий целиком, а не скачивайте один `docker-compose.yml`:
+1. `docker-compose.yml` монтирует вспомогательные файлы из той же директории, поэтому клонируйте репозиторий целиком:
 
 ```bash
-git clone --depth 1 https://github.com/CyberoniOntoni/testgram.git
-cd testgram/docker/compose
+git clone --branch main --depth 1 https://github.com/CyberoniOntoni/FamilyGram-Server.git
+cd FamilyGram-Server/docker/compose
 cp .env.example .env
 ```
 
@@ -97,8 +96,8 @@ App__WebRtcConnections__0__Ip=YOUR_SERVER_IP
 App__WebRtcConnections__0__Port=5348
 App__WebRtcConnections__0__Turn=True
 App__WebRtcConnections__0__Stun=True
-App__WebRtcConnections__0__UserName=testgram
-App__WebRtcConnections__0__Password=testgram123
+App__WebRtcConnections__0__UserName=familygram
+App__WebRtcConnections__0__Password=CHANGE_ME_STRONG
 ```
 
 Настройка индексов MongoDB (автоматически при первом запуске):
@@ -205,56 +204,43 @@ docker compose up -d --force-recreate file-server
 
 ### CI (GitHub Actions)
 
-[`.github/workflows/docker-build.yml`](.github/workflows/docker-build.yml) собирает шесть .NET-сервисов, чьи исходники
-есть в этом форке — `messenger-command-server`, `messenger-query-server`, `gateway-server`, `auth-server`,
-`sms-sender`, `data-seeder` — а также Python-бота верификации (`testgram-bot`), и публикует их в GHCR при каждом
-push в `dev` и при тегах `v*.*.*` (в pull request'ах только сборка, без публикации). Образы публикуются как:
+[`.github/workflows/docker-build.yml`](.github/workflows/docker-build.yml) собирает .NET-сервисы форка
+(`messenger-command/query`, `gateway`, `auth`, `sms-sender`, `data-seeder`, открытые `file-server` и `session-server`)
+и бота `familygram-server-bot`, публикует в GHCR при push в **`main`** и тегах `v*.*.*`.
 
 ```
-ghcr.io/CyberoniOntoni/testgram/<service-name>:latest
-ghcr.io/CyberoniOntoni/testgram/<service-name>:<version>   # из build/version.txt
-ghcr.io/CyberoniOntoni/testgram/<service-name>:<git-sha>
+ghcr.io/cyberoniontoni/familygram-server/<service-name>:latest
+ghcr.io/cyberoniontoni/familygram-server/<service-name>:<version>
+ghcr.io/cyberoniontoni/familygram-server/<service-name>:main
+ghcr.io/cyberoniontoni/familygram-server/<service-name>:<git-sha>
 ```
 
-`docker-compose.yml` уже ссылается на эти образы через `TestgramRegistry`/`TestgramVersion` в `.env` (см.
-`.env.example`), так что `docker compose pull && docker compose up -d` подхватит то, что собрал CI. `session-server`
-и `file-server` не входят в исходники этого форка, поэтому они по-прежнему тянутся из upstream-реестра MyTelegram
-через отдельные переменные `MyTelegramRegistry`/`MyTelegramVersion`.
+`docker-compose.yml` использует `FamilyGramServerRegistry` / `FamilyGramServerVersion` (по умолчанию **`latest`**).
 
-> Пакеты GHCR по умолчанию приватные даже в публичном репозитории. При первом запуске workflow сделайте каждый
-> пакет `ghcr.io/CyberoniOntoni/testgram/<service-name>` публичным в настройках **Packages** репозитория/организации,
-> либо выполните `docker login ghcr.io` с токеном с правом `read:packages` перед `docker compose pull`.
-
-Собрать вручную можно из вкладки **Actions** (`workflow_dispatch`).
+```bash
+docker compose pull && docker compose up -d
+```
 
 ### Локальная сборка
 
-Скрипты `build/docker/*.sh` по умолчанию тегируют образы как `mytelegram/<service-name>`. `docker-compose.yml`
-использует `${TestgramRegistry}/<service-name>:${TestgramVersion}` (по умолчанию `ghcr.io/CyberoniOntoni/testgram`),
-поэтому перед сборкой установите `REGISTRY_URL` в то же значение — иначе `docker compose up -d` просто заново
-скачает образ из GHCR вместо локально собранного:
-
 ```bash
-# Linux amd64
 cd build/docker
-export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"   # должно совпадать с TestgramRegistry в .env
+export REGISTRY_URL="ghcr.io/cyberoniontoni/familygram-server"
 ./build-all-amd64.sh
-
-# Linux arm64
-export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"
-./build-all-arm64.sh
 ```
 
 ## Клиенты
 
 | Платформа | Репозиторий |
 |-----------|-------------|
-| Android | https://github.com/glebxdlolreal/testgram-android |
-| Desktop (FamilyGram) | https://github.com/CyberoniOntoni/familygram-desktop |
-| **Web (FamilyGram)** | **https://github.com/CyberoniOntoni/familygram-web** |
-| iOS | https://github.com/loyldg/mytelegram-iOS |
-| WebK | https://github.com/loyldg/mytelegram-webk |
-| WebA | https://github.com/loyldg/mytelegram-weba |
+| **Web + стек (рекомендуется)** | https://github.com/CyberoniOntoni/familygram (`main`) |
+| Server (этот репозиторий) | https://github.com/CyberoniOntoni/FamilyGram-Server (`main`) |
+| Desktop | https://github.com/CyberoniOntoni/familygram-desktop |
+| Android | https://github.com/CyberoniOntoni/testgram-android |
+| iOS | https://github.com/CyberoniOntoni/mytelegram-iOS |
+| WebK | https://github.com/CyberoniOntoni/mytelegram-webk |
+
+Продуктовый wire layer — **228** (открытый session-server). См. [docs/UPSTREAM_FORKS.md](docs/UPSTREAM_FORKS.md).
 
 ### Настройка клиентов
 1. Склонируйте исходный код клиента.
@@ -443,7 +429,7 @@ python3 seed_reactions.py --generate-handler
 
 # 4. Пересобрать и задеплоить образы messenger
 cd ../build/docker
-export REGISTRY_URL="ghcr.io/CyberoniOntoni/testgram"   # должно совпадать с TestgramRegistry в .env
+export REGISTRY_URL="ghcr.io/cyberoniontoni/familygram-server"
 bash 1.build-messenger-command-server.sh
 bash 2.build-messenger-query-server.sh
 cd ../../docker/compose && docker compose down && docker compose up -d
