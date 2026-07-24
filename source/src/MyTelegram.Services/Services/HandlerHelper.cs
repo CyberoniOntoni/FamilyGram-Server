@@ -35,20 +35,6 @@ public class HandlerHelper(IServiceProvider serviceProvider, ILogger<HandlerHelp
             }
         }
 
-        // Dual-register layer-224 request constructor IDs onto the latest-layer handlers
-        // so clients still speaking 224 request IDs keep working after LayerLatest=228.
-        foreach (var (legacyId, latestId) in SerializerObjectMappings.LegacyToLatestConstructorIds)
-        {
-            if (allHandlers.TryGetValue(latestId, out var dualHandler))
-            {
-                allHandlers.TryAdd(legacyId, dualHandler);
-                if (allHandlerNames.TryGetValue(latestId, out var dualName))
-                {
-                    allHandlerNames.TryAdd(legacyId, dualName);
-                }
-            }
-        }
-
         _handlers = allHandlers.ToFrozenDictionary();
         _handlerNames = allHandlerNames.ToFrozenDictionary();
         sw.Stop();

@@ -6,12 +6,12 @@
 
 **FamilyGram-Server** is the MTProto backend for [FamilyGram](https://github.com/CyberoniOntoni/familygram) — a fork of [MyTelegram](https://github.com/loyldg/mytelegram), a self-hosted C# implementation of the Telegram server-side API. (This repo was formerly named **Testgram**.)
 
-**Wire layer: 228** (`Layers.LayerLatest`). Clients should negotiate **228**. A temporary dual object-id map still accepts some older **224** *request* constructors during client migration; the server does **not** run as a multi-layer 224–228 product. See [docs/LAYER_228_UPGRADE.md](docs/LAYER_228_UPGRADE.md).
+**Wire layer: 228 only** (`Layers.LayerLatest` = `Layers.LayerMinSupported` = 228). Clients must negotiate **228**. No dual object-id / multi-layer shims. See [docs/LAYER_228_UPGRADE.md](docs/LAYER_228_UPGRADE.md).
 
 ## Supported Features
 
 ### Open Source Features
-- API Layer: **`228`** (Latest)
+- API Layer: **`228`** only
 - MTProto Transports: `Abridged`, `Intermediate`
 - Private Chat
 - Supergroup Chat

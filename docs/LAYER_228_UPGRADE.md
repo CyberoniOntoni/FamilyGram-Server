@@ -1,58 +1,35 @@
-# API Layer 228 upgrade
+# API Layer 228
 
-**Status:** complete for production — `Layers.LayerLatest = 228` with open session-server  
-**Production wire layer:** **228** only (responses, pushes, `invokeWithLayer`)  
-**Not multi-layer:** clients should use layer **228**. Dual object-id registration only *accepts* a few common **224 request** constructors so lagging clients can migrate; those shims will be removed when no 224 clients remain.  
-**Upstream forks:** see [UPSTREAM_FORKS.md](./UPSTREAM_FORKS.md)
+**Production wire layer:** **228** only (`Layers.LayerLatest` = `Layers.LayerMinSupported` = 228).
 
-## What landed (P0)
+There is **no** dual object-id map and **no** multi-layer 224–228 product mode. Clients must negotiate and speak **layer 228** constructors.
 
-| Area | Change |
+## Server
+
+| Item | Value |
 |------|--------|
 | `Layers.LayerLatest` | **228** |
-| Schema constructor IDs | 26 ID-changed types at 228 wire IDs (`scripts/upgrade_layer_228_ids.py`) |
-| Dual object-id map | 224 + 228 IDs still registered for send/edit/draft/join/import (clients can migrate) |
-| Open session-server | Uses shared Schema — must redeploy with this change |
+| `Layers.LayerMinSupported` | **228** |
+| Schema constructor IDs | Layer 228 wire IDs |
+| Session / file server | Open GHCR images from FamilyGram-Server `main` |
 | Vendored schema | `docs/api.tl.228` |
 
-## Client follow-up (P1 — not this commit)
+## Clients
 
-| Client | Action |
-|--------|--------|
-| familygram web | `TG_GRAMJS_LAYER=228`; remove 224 force on `sendMessage` / `familygramTlCompat` |
-| Desktop / Android / iOS / webk | Raise `LAYER` / `MTPROTO_LAYER` to 228 |
-
-## Still remaining (API surface, not wire)
-
-| Namespace | Methods | Status |
-|-----------|---------|--------|
-| `communities.*` | create, getJoinedCommunities, peer links, … | not implemented |
-| `ephemeral.*` | sendMessage, deleteMessage, … | not implemented |
-| `messages.composeRichMessageWithAI` / `translateRichMessage` | AI rich compose | not implemented |
-| `bots.*` access settings / join chat results | bot guest chat | not implemented |
-| `stats.getPollStats` | poll stats | not implemented |
-| Full AI compose backend | real LLM tones | stubs only |
-
-## Acceptance
-
-- [x] Server Latest = 228  
-- [x] Schema wire IDs at 228 (with dual map for key handlers)  
-- [x] Open session-server builds against Schema  
-- [ ] Lab smoke: invokeWithLayer 228 + sendMessage#fef48f62  
-- [ ] Web + other clients flipped to 228  
-- [ ] Full new API surface  
-- [ ] Drop dual-ID shims when no 224 clients remain  
+| Client | Requirement |
+|--------|-------------|
+| familygram web | `TG_GRAMJS_LAYER=228`; no 224 constructor aliases |
+| Desktop / Android / iOS / webk | `LAYER` / `MTPROTO_LAYER` = **228** |
 
 ## Do not
 
-- Deploy messenger/session with 228 Schema while clients still force 224-only *responses* that the new Schema no longer emit as Latest (push uses Latest IDs).  
-- Mix closed Docker Hub session-server with 228 wire (closed image cannot deserialize 228 constructors).  
-- Ship only a constant bump without Schema ID upgrade.
+- Mix closed Docker Hub `mytelegram-session-server` with this Schema (closed image cannot deserialize 228 constructors).
+- Re-introduce dual registration of 224 request IDs for “compat”.
 
-## Rollback
+## Historical scripts
 
 ```bash
+# Only if reverting Schema IDs for research (not production)
 python scripts/revert_layer_228_wire_ids.py
-# set Layers.LayerLatest = 224
-# rebuild + redeploy session + messenger*
+python scripts/upgrade_layer_228_ids.py
 ```
