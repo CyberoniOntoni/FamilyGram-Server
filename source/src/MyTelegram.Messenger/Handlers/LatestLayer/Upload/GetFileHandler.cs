@@ -2,7 +2,7 @@
 using MongoDB.Driver;
 using MyTelegram.Messenger.Services.Phone;
 
-namespace MyTelegram.Messenger.Messenger.Handlers.LatestLayer.Upload;
+namespace MyTelegram.Messenger.Handlers.LatestLayer.Upload;
 
 /// <summary>
 /// Returns content of a whole file or its part.
