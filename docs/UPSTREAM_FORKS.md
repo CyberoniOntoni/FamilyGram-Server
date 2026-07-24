@@ -20,7 +20,7 @@ Legacy closed Docker Hub images (`mytelegram/mytelegram-session-server`, `mytele
 
 | Upstream | Fork | Wire layer |
 |----------|------|------------|
-| glebxdlolreal/testgram → FamilyGram-Server | [FamilyGram-Server](https://github.com/CyberoniOntoni/FamilyGram-Server) | **228** (open session); dual-map 224 request accept |
+| glebxdlolreal/testgram → FamilyGram-Server | [FamilyGram-Server](https://github.com/CyberoniOntoni/FamilyGram-Server) | **228** wire (open session) |
 | Ajaxy/telegram-tt | [familygram](https://github.com/CyberoniOntoni/familygram) `web/` | **228** (`TG_GRAMJS_LAYER=228`) |
 | telegramdesktop + libs | [familygram-desktop](https://github.com/CyberoniOntoni/familygram-desktop) | migrate to 228 |
 | loyldg/mytelegram-android | [testgram-android](https://github.com/CyberoniOntoni/testgram-android) | migrate to 228 |
@@ -31,8 +31,8 @@ Legacy closed Docker Hub images (`mytelegram/mytelegram-session-server`, `mytele
 
 ## Client migration
 
-Server **Latest wire is 228** and serializes Latest constructors on the wire (pushes, RPC results). Dual object-id maps still accept common **224 request** constructors during migration.
+Server **wire layer is 228** and serializes Latest constructors on the wire (pushes, RPC results). Temporary dual object-id maps may still accept common **224 request** constructors; this is migration glue, not multi-layer support.
 
-Clients still on 224 should be updated: they may fail to parse 228 response constructors once all server images run this release.
+Clients still on 224 should be updated: they may fail to parse 228 response constructors.
 
 **Required together:** open `SessionServerImage` + messenger images from FamilyGram-Server `main` + client `LAYER = 228` (web: `TG_GRAMJS_LAYER=228`).

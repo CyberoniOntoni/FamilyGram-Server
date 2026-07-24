@@ -1,16 +1,17 @@
 # FamilyGram-Server
 
 [![API Layer](https://img.shields.io/badge/API_Layer-228-blueviolet)](https://corefork.telegram.org/methods)
-[![Multi-layer](https://img.shields.io/badge/Multi--layer-224–228-green)](docs/LAYER_228_UPGRADE.md)
 [![MTProto](https://img.shields.io/badge/MTProto_Protocol-2.0-green)](https://corefork.telegram.org/mtproto/)
 [![Fork](https://img.shields.io/badge/fork-loyldg%2Fmytelegram-blue)](https://github.com/loyldg/mytelegram)
 
 **FamilyGram-Server** is the MTProto backend for [FamilyGram](https://github.com/CyberoniOntoni/familygram) — a fork of [MyTelegram](https://github.com/loyldg/mytelegram), a self-hosted C# implementation of the Telegram server-side API. (This repo was formerly named **Testgram**.)
 
+**Wire layer: 228** (`Layers.LayerLatest`). Clients should negotiate **228**. A temporary dual object-id map still accepts some older **224** *request* constructors during client migration; the server does **not** run as a multi-layer 224–228 product. See [docs/LAYER_228_UPGRADE.md](docs/LAYER_228_UPGRADE.md).
+
 ## Supported Features
 
 ### Open Source Features
-- API Layer: `228` (Latest). Multi-layer **224–228** via dual constructor registration — see [docs/LAYER_228_UPGRADE.md](docs/LAYER_228_UPGRADE.md).
+- API Layer: **`228`** (Latest)
 - MTProto Transports: `Abridged`, `Intermediate`
 - Private Chat
 - Supergroup Chat
@@ -381,7 +382,7 @@ Default branch is **`main`** for FamilyGram-Server and the unified stack. Prefer
 | TDLib | https://github.com/CyberoniOntoni/mytelegram-td |
 | Bot API | https://github.com/CyberoniOntoni/mytelegram-bot-api |
 
-**Production images:** open `session-server` and `file-server` are built in this repo and published to GHCR as `:latest` from `main`. Wire layer is **228** (`Layers.LayerLatest`). Dual maps still accept common **224** request constructors during client migration — see [docs/UPSTREAM_FORKS.md](docs/UPSTREAM_FORKS.md) and [docs/LAYER_228_UPGRADE.md](docs/LAYER_228_UPGRADE.md).
+**Production images:** open `session-server` and `file-server` are built in this repo and published to GHCR as `:latest` from `main`. Wire layer is **228** only for responses and pushes. See [docs/UPSTREAM_FORKS.md](docs/UPSTREAM_FORKS.md) and [docs/LAYER_228_UPGRADE.md](docs/LAYER_228_UPGRADE.md).
 
 ### Configure Clients
 1. Clone the client source code.

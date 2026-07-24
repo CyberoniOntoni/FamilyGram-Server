@@ -1,8 +1,8 @@
 # API Layer 228 upgrade
 
-**Status:** P0 wire cutover — `Layers.LayerLatest = 228` with open session-server  
-**Production wire layer:** **228** (`Layers.LayerLatest`)  
-**Min supported:** **224** (dual object-id registration for common methods during client migration)  
+**Status:** complete for production — `Layers.LayerLatest = 228` with open session-server  
+**Production wire layer:** **228** only (responses, pushes, `invokeWithLayer`)  
+**Not multi-layer:** clients should use layer **228**. Dual object-id registration only *accepts* a few common **224 request** constructors so lagging clients can migrate; those shims will be removed when no 224 clients remain.  
 **Upstream forks:** see [UPSTREAM_FORKS.md](./UPSTREAM_FORKS.md)
 
 ## What landed (P0)
