@@ -2,8 +2,11 @@
 # FamilyGram-Server — interactive Docker Compose installer
 #
 # Usage (save first, then run — do NOT curl | bash):
-#   curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/dev/deploy/install.sh -o install.sh
+#   curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/main/deploy/install.sh -o install.sh
 #   sudo bash install.sh
+#
+# Prefer the unified stack installer instead:
+#   https://github.com/CyberoniOntoni/familygram (deploy/install.sh on main)
 #
 # Non-interactive:
 #   PUBLIC_IP=1.2.3.4 LAN_IP=192.168.1.10 BOT_TOKEN='123:ABC' \
@@ -23,10 +26,10 @@
 #   --help               show help
 set -euo pipefail
 
-INSTALLER_VERSION="3.2.0"
+INSTALLER_VERSION="3.3.0"
 
 REPO_URL="${REPO_URL:-https://github.com/CyberoniOntoni/FamilyGram-Server.git}"
-REPO_BRANCH="${REPO_BRANCH:-dev}"
+REPO_BRANCH="${REPO_BRANCH:-main}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/familygram-server}"
 COMPOSE_DIR="${INSTALL_DIR}/docker/compose"
 COMPOSE_FILE="${COMPOSE_DIR}/docker-compose.yml"

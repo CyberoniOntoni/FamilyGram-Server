@@ -244,7 +244,7 @@ setup_interactive_stdin() {
 Do NOT pipe this script (curl ... | bash) — that steals stdin and skips prompts.
 
 Instead:
-  curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/dev/deploy/install.sh -o install.sh
+  curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/main/deploy/install.sh -o install.sh
   bash install.sh
 
 Or pass all values explicitly:

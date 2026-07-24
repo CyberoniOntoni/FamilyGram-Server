@@ -6,7 +6,7 @@ Self-hosted [Testgram](https://github.com/CyberoniOntoni/FamilyGram-Server) on P
 
 | Item | Value |
 |------|-------|
-| Fork / repo | `https://github.com/CyberoniOntoni/FamilyGram-Server` (branch `dev`) |
+| Fork / repo | `https://github.com/CyberoniOntoni/FamilyGram-Server` (branch `main`) |
 | Proxmox VM LAN IP | `192.168.1.10` |
 | Public WAN IP | `123.123.123.123` |
 | Domain | `acmechat.example` |
@@ -162,7 +162,7 @@ ssh root@192.168.1.10
 `deploy/install.sh` is the Docker interactive wizard — public IP, LAN IP, ports, branding, bot token, then a **port-forward checklist**.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/dev/deploy/install.sh -o /tmp/install.sh
+curl -fsSL https://raw.githubusercontent.com/CyberoniOntoni/FamilyGram-Server/main/deploy/install.sh -o /tmp/install.sh
 sudo bash /tmp/install.sh
 ```
 
@@ -183,7 +183,7 @@ sudo bash /tmp/install.sh --non-interactive --start
 ### Or from a cloned repo
 
 ```bash
-git clone -b dev https://github.com/CyberoniOntoni/FamilyGram-Server.git /opt/testgram
+git clone -b main https://github.com/CyberoniOntoni/FamilyGram-Server.git /opt/testgram
 sudo bash /opt/testgram/deploy/install.sh
 ```
 
@@ -247,7 +247,7 @@ echo YOUR_GITHUB_PAT | docker login ghcr.io -u CyberoniOntoni --password-stdin
 
 ### Verify CI built images
 
-Check: https://github.com/CyberoniOntoni/FamilyGram-Server/actions — workflow **Build and Push Docker Images** must be green on `dev`.
+Check: https://github.com/CyberoniOntoni/FamilyGram-Server/actions — workflow **Build and Push Docker Images** must be green on `main`.
 
 ---
 
@@ -387,7 +387,7 @@ Fork clients must point at your server IP at **build time**.
 | Desktop | https://github.com/CyberoniOntoni/familygram-desktop (`dev` — AcmeChat IP pre-patched) |
 
 1. Clone the client repo (`dev` branch).
-2. **Desktop:** see [testgram-tdesktop/docs/BUILD-AcmeChat.md](https://github.com/CyberoniOntoni/familygram-desktop/blob/dev/docs/BUILD-AcmeChat.md) — verify `mtproto_dc_options.cpp` has `123.123.123.123` and ports `20443`/`20543`/`20643`.
+2. **Desktop:** see [testgram-tdesktop/docs/BUILD-AcmeChat.md](https://github.com/CyberoniOntoni/familygram-desktop/blob/main/docs/BUILD-AcmeChat.md) — verify `mtproto_dc_options.cpp` has `123.123.123.123` and ports `20443`/`20543`/`20643`.
 3. **Android:** search for `YOUR_SERVER_IP` and replace with **`123.123.123.123`** (public IP, not domain).
 4. Build and install the APK / desktop binary (Windows: Visual Studio + `prepare\win.bat` + `configure.bat x64` with your `api_id`/`api_hash` from [my.telegram.org](https://my.telegram.org/apps)).
 
