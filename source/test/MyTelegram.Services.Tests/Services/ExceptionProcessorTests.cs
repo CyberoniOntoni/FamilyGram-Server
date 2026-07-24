@@ -32,7 +32,7 @@ public class ExceptionProcessorTests
             2091001,
             -5765431725600661026,
             -8536330271488447713,
-            224,
+            228,
             1779480857859,
             DeviceType.Desktop,
             "2.26.13.4",

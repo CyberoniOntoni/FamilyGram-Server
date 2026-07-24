@@ -20,6 +20,12 @@ public static class SerializerObjectMappings
 
         foreach (var type in types)
         {
+            // FamilyGram is layer 228 only — do not register LayerN / pre-Latest TL types.
+            if (IsLegacyLayerType(type))
+            {
+                continue;
+            }
+
             var attr = type.GetCustomAttribute<TlObjectAttribute>();
             if (attr != null)
             {
@@ -37,6 +43,21 @@ public static class SerializerObjectMappings
     private static void InitTypeMappings()
     {
         CreateConstructIdToTypeMappingsFromAssembly(typeof(IObject).Assembly);
+    }
+
+    private static bool IsLegacyLayerType(Type type)
+    {
+        var ns = type.Namespace;
+        if (string.IsNullOrEmpty(ns))
+        {
+            return false;
+        }
+
+        // e.g. MyTelegram.Schema.Updates.LayerN, MyTelegram.Schema.LayerN, ...Layer160...
+        return ns.Contains(".LayerN", StringComparison.Ordinal)
+               || ns.Contains(".LayerN.", StringComparison.Ordinal)
+               || ns.EndsWith(".LayerN", StringComparison.Ordinal)
+               || System.Text.RegularExpressions.Regex.IsMatch(ns, @"\.Layer\d+");
     }
 
     public static void TryAddTlObjectFuncToCache(Type typeOfT,

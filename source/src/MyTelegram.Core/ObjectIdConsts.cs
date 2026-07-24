@@ -4,7 +4,6 @@ public partial class ObjectIdConsts
 {
     public const uint BindTempAuthKey = 0xcdd42a05;
     public const uint GetFileObjectId = 0xb15a9afc;
-    public const uint GetFileObjectIdLayer143 = 0xbe5335be;
     public const uint SaveFilePartObjectId = 0xb304a621;
     public const uint UploadMediaObjectId = 0x14967978;
 
@@ -17,7 +16,6 @@ public partial class ObjectIdConsts
     public const uint PingId = 0x7abe77ec;
     public const uint UpdateStatusId = 0x6628562c;
     public const uint GetDifferenceId = 0x19c2f763;
-    public const uint GetDifferenceLayerNId = 0x25939651;
     public const uint LogoutId = 0x3e72ba19;
 
     public const uint InitConnectionId = 0xc1cd5ea9;

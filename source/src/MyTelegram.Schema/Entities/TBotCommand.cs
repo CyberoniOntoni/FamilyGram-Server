@@ -2,7 +2,7 @@
 namespace MyTelegram.Schema;
 
 /// <summary>
-/// Describes a bot command that can be used in a chat (layer 224 wire: no flags).
+/// Describes a bot command that can be used in a chat.
 /// </summary>
 [TlObject(0x9852d6d2)]
 public sealed partial class TBotCommand : IBotCommand

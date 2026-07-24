@@ -28,35 +28,9 @@ public class LayeredService<TLayeredConverter> : ILayeredService<TLayeredConvert
 
     public TLayeredConverter GetConverter(int layer)
     {
-        if (layer == 0 || layer == Converter.Layer)
-        {
-            return Converter;
-        }
-
-        if (_layeredConverters.TryGetValue(layer, out var converter))
-        {
-            return converter;
-        }
-
-        if (layer < _minLayer)
-        {
-            return _minLayerConverter;
-        }
-
-        if (layer > _maxLayer)
-        {
-            return _maxLayerConverter;
-        }
-
-        // Since the total number of layers is relatively small(<100), we can directly use foreach to find the nearest layer
-        foreach (var theLayer in _layers)
-        {
-            if (theLayer > layer)
-            {
-                return _layeredConverters[theLayer];
-            }
-        }
-
+        // FamilyGram is layer 228 only: always serialize Latest constructors.
+        // Ignore client-reported lower layers so we never emit pre-228 wire shapes.
+        _ = layer;
         return _maxLayerConverter;
     }
 }

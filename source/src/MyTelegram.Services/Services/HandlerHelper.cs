@@ -20,10 +20,22 @@ public class HandlerHelper(IServiceProvider serviceProvider, ILogger<HandlerHelp
         foreach (var handler in handlers)
         {
             var handlerType = handler.GetType();
+            // Skip LayerN / older-layer forwarders — FamilyGram accepts Latest (228) requests only.
+            if (IsLegacyLayerHandler(handlerType))
+            {
+                continue;
+            }
+
             var genericArgument = handlerType.BaseType?.GetGenericArguments();
             if (genericArgument?.Length > 0)
             {
-                var attr = genericArgument[0].GetCustomAttribute<TlObjectAttribute>();
+                var requestType = genericArgument[0];
+                if (IsLegacyLayerType(requestType))
+                {
+                    continue;
+                }
+
+                var attr = requestType.GetCustomAttribute<TlObjectAttribute>();
                 if (attr != null)
                 {
                     allHandlers.TryAdd(attr.ConstructorId, handler);
@@ -97,5 +109,20 @@ public class HandlerHelper(IServiceProvider serviceProvider, ILogger<HandlerHelp
             return text[removeCount..];
         }
         return text;
+    }
+
+    private static bool IsLegacyLayerHandler(Type handlerType)
+    {
+        var ns = handlerType.Namespace ?? string.Empty;
+        return ns.Contains(".LayerN", StringComparison.Ordinal)
+               || ns.Contains(".Handlers.LayerN", StringComparison.Ordinal)
+               || System.Text.RegularExpressions.Regex.IsMatch(ns, @"\.Layer\d+");
+    }
+
+    private static bool IsLegacyLayerType(Type type)
+    {
+        var ns = type.Namespace ?? string.Empty;
+        return ns.Contains(".LayerN", StringComparison.Ordinal)
+               || System.Text.RegularExpressions.Regex.IsMatch(ns, @"\.Layer\d+");
     }
 }

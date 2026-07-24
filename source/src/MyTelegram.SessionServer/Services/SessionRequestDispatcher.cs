@@ -19,7 +19,6 @@ public sealed class SessionRequestDispatcher(
         ObjectIdConsts.SaveFilePartObjectId,
         ObjectIdConsts.SaveBigFilePartObjectId,
         ObjectIdConsts.GetFileObjectId,
-        ObjectIdConsts.GetFileObjectIdLayer143,
         0x24e6818d, // upload.getWebFile
         0x9156982a, // upload.getFileHashes
     ];
@@ -164,8 +163,7 @@ public sealed class SessionRequestDispatcher(
         var date = envelope.Date;
 
         if (UploadObjectIds.Contains(constructorId) ||
-            ObjectIdConsts.GetFileObjectId == constructorId ||
-            ObjectIdConsts.GetFileObjectIdLayer143 == constructorId)
+            ObjectIdConsts.GetFileObjectId == constructorId)
         {
             if (constructorId is ObjectIdConsts.SaveFilePartObjectId or ObjectIdConsts.SaveBigFilePartObjectId)
             {

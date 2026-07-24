@@ -264,7 +264,7 @@ public sealed class FileDownloadLaneRouter(
 
     private static bool IsGetFileObjectId(uint objectId)
     {
-        return objectId is ObjectIdConsts.GetFileObjectId or ObjectIdConsts.GetFileObjectIdLayer143;
+        return objectId is ObjectIdConsts.GetFileObjectId;
     }
 
     private static bool ContainsConstructorId(ReadOnlySpan<byte> data, uint constructorId)

@@ -10,7 +10,9 @@ There is **no** dual object-id map and **no** multi-layer 224–228 product mode
 |------|--------|
 | `Layers.LayerLatest` | **228** |
 | `Layers.LayerMinSupported` | **228** |
-| Schema constructor IDs | Layer 228 wire IDs |
+| Schema constructor IDs | Layer 228 wire IDs only (LayerN types not registered for deserialize) |
+| Handlers | Latest-layer only (LayerN forwarders not registered) |
+| Responses | Always serialized with Latest converters (`LayeredService` ignores lower client layers) |
 | Session / file server | Open GHCR images from FamilyGram-Server `main` |
 | Vendored schema | `docs/api.tl.228` |
 
