@@ -367,11 +367,10 @@ services:
       redis:
         condition: service_healthy
 
-  ### 3.Session server
-  # Not built by this fork's CI (no source/Dockerfile in this repo) - pulled from
-  # the upstream MyTelegram registry.
+  ### 3.Session server (open FamilyGram, layer 228)
+  # Built by this repo's CI as ghcr.io/.../mytelegram-session-server:latest
   session-server:
-    image: ${MyTelegramRegistry}/mytelegram-session-server:${MyTelegramVersion}
+    image: ${SessionServerImage:-${FamilyGramServerRegistry:-${TestgramRegistry:-ghcr.io/cyberoniontoni/familygram-server}}/mytelegram-session-server:${FamilyGramServerVersion:-${TestgramVersion:-latest}}}
     restart: always
     networks:
       - tg-net
@@ -426,11 +425,10 @@ services:
   #   depends_on:
   #     - mongodb
 
-  ### 4.File server
-  # Not built by this fork's CI (no source/Dockerfile in this repo) - pulled from
-  # the upstream MyTelegram registry.
+  ### 4.File server (open FamilyGram, layer 228)
+  # Built by this repo's CI as ghcr.io/.../mytelegram-file-server:latest
   file-server:
-    image: ${MyTelegramRegistry}/mytelegram-file-server:${MyTelegramVersion}
+    image: ${FileServerImage:-${FamilyGramServerRegistry:-${TestgramRegistry:-ghcr.io/cyberoniontoni/familygram-server}}/mytelegram-file-server:${FamilyGramServerVersion:-${TestgramVersion:-latest}}}
     user: "1654"
     entrypoint: ["/app/MyTelegram.FileServer"]
     restart: always
