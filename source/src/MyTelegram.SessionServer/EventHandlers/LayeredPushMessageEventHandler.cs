@@ -20,10 +20,11 @@ public sealed class LayeredPushMessageEventHandler(
         var sessions = await authKeyStore.GetOnlineByUserIdAsync(eventData.PeerId);
         if (sessions.Count == 0)
         {
-            logger.LogDebug("No online sessions for user {UserId}", eventData.PeerId);
+            logger.LogWarning("No online sessions for user {UserId} pts={Pts} — push dropped", eventData.PeerId, eventData.Pts);
             return;
         }
 
+        var pushed = 0;
         foreach (var session in sessions)
         {
             if (eventData.ExcludeAuthKeyId is long excludeKey && excludeKey == session.AuthKeyId)
@@ -44,11 +45,22 @@ public sealed class LayeredPushMessageEventHandler(
             try
             {
                 await dispatcher.SendRawResultAsync(session, eventData.Data);
+                pushed++;
             }
             catch (Exception pushEx)
             {
                 logger.LogWarning(pushEx, "Push failed user={UserId} authKey={AuthKeyId:x}", eventData.PeerId, session.AuthKeyId);
             }
+        }
+
+        if (pushed == 0)
+        {
+            logger.LogWarning(
+                "Push matched no sessions for user {UserId} pts={Pts} online={Online} excludeAuth={Exclude}",
+                eventData.PeerId,
+                eventData.Pts,
+                sessions.Count,
+                eventData.ExcludeAuthKeyId);
         }
     }
 }

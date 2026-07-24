@@ -257,9 +257,13 @@ public partial class MessageDomainEventHandler(
         // state.
         updates = await EnrichInboxUpdatesAsync(aggregateEvent, updates);
 
+        // Tag as NewMessages so getDifference collects MessageId even when the payload
+        // is a full TUpdates (EnrichInboxUpdates). UpdatesType.Updates alone used to leave
+        // inbox rows only in OtherUpdates and made orphan recovery harder.
         await PushUpdatesToPeerAsync(item.OwnerPeer,
             updates,
             pts: item.Pts,
+            updatesType: UpdatesType.NewMessages,
             senderUserId: item.SenderPeer.PeerId
         );
 

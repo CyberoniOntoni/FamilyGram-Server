@@ -21,9 +21,12 @@ internal sealed class GetStateHandler(IPtsHelper ptsHelper, IQueryProcessor quer
         }
 
         var cacheItem = await ptsHelper.GetPtsForUserAsync(input.UserId);
-        // Reconcile lagging PtsReadModel against actual message pts (HiLo jumps after restarts).
+        // Advertise the true mailbox high-water pts so clients with a lower local pts
+        // call getDifference. getDifference must actually return the rows (and must NOT
+        // report this high pts on an empty difference — that combo was the stuck loop).
         var maxMessagePts = await queryProcessor.ProcessAsync(new GetMaxPtsByPeerIdQuery(input.UserId));
-        var pts = Math.Max(cacheItem.Pts, maxMessagePts);
+        var ptsReadModel = await queryProcessor.ProcessAsync(new GetPtsByPeerIdQuery(input.UserId));
+        var pts = Math.Max(cacheItem.Pts, Math.Max(ptsReadModel?.Pts ?? 0, maxMessagePts));
         if (pts > cacheItem.Pts)
         {
             await ptsHelper.IncrementPtsAsync(input.UserId, pts);

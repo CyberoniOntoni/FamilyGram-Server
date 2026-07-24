@@ -272,6 +272,19 @@ public record GetMaxPtsByPeerIdQuery(long PeerId) : IQuery<int>;
 public record GetMessageIdListAfterIdQuery(long OwnerPeerId, int AfterMessageId, int Limit)
     : IQuery<IReadOnlyCollection<int>>;
 
+/// <summary>
+/// Message ids for an owner with Pts greater than <paramref name="MinPts"/> (exclusive), ascending.
+/// Direct mailbox recovery for getDifference when the updates table is incomplete
+/// or out-of-order completion left holes relative to client pts.
+/// </summary>
+public record GetMessageIdListByMinPtsQuery(long OwnerPeerId, int MinPts, int Limit)
+    : IQuery<IReadOnlyCollection<int>>;
+
+/// <summary>
+/// Highest MessageId currently stored for this owner peer in the message read model.
+/// </summary>
+public record GetOwnerMaxMessageIdQuery(long OwnerPeerId) : IQuery<int>;
+
 public record GetPtsByPermAuthKeyIdQuery(
     long PeerId,
     long PermAuthKeyId) : IQuery<IPtsForAuthKeyIdReadModel?>;
